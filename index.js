@@ -222,7 +222,7 @@ class SchemaParser extends CstParser {
 const customVisitor = (parser) => {
   const baseSchemeVisitor = parser.getBaseCstVisitorConstructorWithDefaults();
 
-  class customVisitor extends baseSchemeVisitor {
+  class CustomVisitorClass extends baseSchemeVisitor {
     constructor() {
       super();
       this.validateVisitor();
@@ -316,7 +316,7 @@ const customVisitor = (parser) => {
     }
   }
 
-  const customVisitorInstance = new customVisitor();
+  const customVisitorInstance = new CustomVisitorClass();
 
   return customVisitorInstance;
 };
