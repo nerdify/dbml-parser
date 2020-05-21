@@ -1,5 +1,5 @@
 {
-  "name": "dsl-dbscheme",
+  "name": "@nerdify/dsl-dbscheme",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
