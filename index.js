@@ -8,7 +8,7 @@ const lBraket = createToken({ name: "lBraket", pattern: /[ ]*{[ ]*/ });
 const rBraket = createToken({ name: "RBraket", pattern: /[ ]*}[ ]*/ });
 const commentLine = createToken({
   name: "commentLine",
-  pattern: /[ ]*\/\/.*\n/,
+  pattern: /[ ]*\/\/.*/,
   group: Lexer.SKIPPED,
 });
 const comment = createToken({
@@ -23,6 +23,8 @@ const comma = createToken({ name: "comma", pattern: /,/ });
 
 const notNull = createToken({ name: "notNull", pattern: /not null/ });
 const primaryKey = createToken({ name: "primaryKey", pattern: /primary key/ });
+const pk = createToken({ name: "pk", pattern: /pk/ });
+const increment = createToken({ name: "increment", pattern: /increment/ });
 const unique = createToken({ name: "unique", pattern: /unique/ });
 
 const name = createToken({ name: "name", pattern: /[\w]{2,}(\(\d+\))?/ });
@@ -49,6 +51,8 @@ const allTokens = [
   comma,
   notNull,
   primaryKey,
+  pk,
+  increment,
   unique,
   name,
   NL,
@@ -209,6 +213,16 @@ class SchemaParser extends CstParser {
         },
         {
           ALT: () => {
+            $.CONSUME(pk);
+          },
+        },
+        {
+          ALT: () => {
+            $.CONSUME(increment);
+          },
+        },
+        {
+          ALT: () => {
             $.CONSUME(unique);
           },
         },
@@ -304,12 +318,14 @@ const customVisitor = (parser) => {
     }
 
     single_modifier(ctx) {
-      if (ctx.primaryKey) {
-        return ctx.primaryKey[0].image;
+      if (ctx.primaryKey || ctx.pk) {
+        return "primary key";
       } else if (ctx.notNull) {
-        return ctx.notNull[0].image;
+        return "not null";
       } else if (ctx.unique) {
-        return ctx.unique[0].image;
+        return "enique";
+      } else if (ctx.increment) {
+        return "auto increment";
       }
 
       return null;
@@ -331,6 +347,7 @@ const parse = (text) => {
 
   const result = schemeParser.elements();
   const parsetOutput = visitor.visit(result);
+  console.log(text);
 
   if (schemeParser.errors.length > 0) {
     return null;
