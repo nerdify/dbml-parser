@@ -1,6 +1,6 @@
 # dbml-parser
 
-DSLDBScheme is an attempt to create an agnostic standalone parser compatible with [DBML - Database Markup Language
+dbml-parser is an attempt to create an agnostic standalone parser compatible with [DBML - Database Markup Language
 ](https://www.dbml.org/home/).
 > This a pretty much a work in progress and not all feature of dbdiagram.io are supported --- yet ;)
 
