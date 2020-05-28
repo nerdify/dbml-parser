@@ -27,7 +27,8 @@ const pk = createToken({ name: "pk", pattern: /pk/ });
 const increment = createToken({ name: "increment", pattern: /increment/ });
 const unique = createToken({ name: "unique", pattern: /unique/ });
 
-const name = createToken({ name: "name", pattern: /[\w]{2,}(\(\d+\))?/ });
+const name = createToken({ name: "name", pattern: /[\w]+(\(\d+\))?/ });
+const as = createToken({ name: "as", pattern: / AS[ ]*/i });
 
 const NL = createToken({ name: "NL", pattern: /[\n]+/ });
 const GT = createToken({ name: "GT", pattern: />/ });
@@ -54,6 +55,7 @@ const allTokens = [
   pk,
   increment,
   unique,
+  as,
   name,
   NL,
   WS,
@@ -156,6 +158,9 @@ class SchemaParser extends CstParser {
     $.RULE("open_table", () => {
       $.CONSUME(tableDf);
       $.CONSUME(name);
+      $.OPTION(() => {
+        $.SUBRULE($.table_alias);
+      });
       $.CONSUME(lBraket);
       $.CONSUME(NL);
     });
@@ -163,6 +168,11 @@ class SchemaParser extends CstParser {
     $.RULE("close_table", () => {
       $.CONSUME(rBraket);
       $.CONSUME(NL);
+    });
+
+    $.RULE("table_alias", () => {
+      $.CONSUME(as);
+      $.CONSUME(name);
     });
 
     $.RULE("columns", () => {
@@ -282,15 +292,24 @@ const customVisitor = (parser) => {
     }
 
     table(ctx) {
+      const alias = ctx.open_table[0].children.table_alias
+        ? ctx.open_table[0].children.table_alias[0].children.name[0].image
+        : null;
       const tableName = ctx.open_table[0].children.name[0].image;
       const columns = ctx.columns[0].children.list.map((column) =>
         this.visit(column)
       );
-      return {
+      const tableObj = {
         type: "table",
         name: tableName,
         columns: columns,
       };
+
+      if (alias) {
+        tableObj.alias = alias;
+      }
+
+      return tableObj;
     }
 
     column(ctx) {
@@ -347,7 +366,6 @@ const parse = (text) => {
 
   const result = schemeParser.elements();
   const parsetOutput = visitor.visit(result);
-  console.log(text);
 
   if (schemeParser.errors.length > 0) {
     return null;
