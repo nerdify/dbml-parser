@@ -21,6 +21,9 @@ const lKey = createToken({ name: "lKey", pattern: /\[/ });
 const rKey = createToken({ name: "rKey", pattern: /\]/ });
 const comma = createToken({ name: "comma", pattern: /,/ });
 
+const doubleQuote = createToken({ name: "doubleQuote", pattern: /"/ });
+const singleQuote = createToken({ name: "singleQuote", pattern: /'/ });
+
 const notNull = createToken({ name: "notNull", pattern: /not null/ });
 const primaryKey = createToken({ name: "primaryKey", pattern: /primary key/ });
 const pk = createToken({ name: "pk", pattern: /pk/ });
@@ -50,6 +53,8 @@ const allTokens = [
   lKey,
   rKey,
   comma,
+  doubleQuote,
+  singleQuote,
   notNull,
   primaryKey,
   pk,
@@ -191,7 +196,43 @@ class SchemaParser extends CstParser {
     });
 
     $.RULE("column_name", () => {
+      $.OR([
+        {
+          ALT: () => {
+            $.SUBRULE($.single_name);
+          },
+        },
+        {
+          ALT: () => {
+            $.SUBRULE($.quoted_name);
+          },
+        },
+        {
+          ALT: () => {
+            $.SUBRULE($.single_quoted_name);
+          },
+        },
+      ]);
+    });
+
+    $.RULE("single_name", () => {
       $.CONSUME(name);
+    });
+
+    $.RULE("quoted_name", () => {
+      $.CONSUME(doubleQuote);
+      $.MANY(() => {
+        $.CONSUME(name);
+      });
+      $.CONSUME2(doubleQuote);
+    });
+
+    $.RULE("single_quoted_name", () => {
+      $.CONSUME(singleQuote);
+      $.MANY(() => {
+        $.CONSUME(name);
+      });
+      $.CONSUME2(singleQuote);
     });
 
     $.RULE("type", () => {
@@ -325,7 +366,32 @@ const customVisitor = (parser) => {
     }
 
     column_name(ctx) {
+      if (ctx.single_name) return this.visit(ctx.single_name);
+      else if (ctx.quoted_name) return this.visit(ctx.quoted_name);
+      else if (ctx.single_quoted_name)
+        return this.visit(ctx.single_quoted_name);
+
+      return null;
+    }
+
+    single_name(ctx) {
       return ctx.name[0].image;
+    }
+
+    quoted_name(ctx) {
+      return ctx.name
+        .reduce((acc, name) => {
+          return acc + " " + name.image;
+        }, "")
+        .trim();
+    }
+
+    single_quoted_name(ctx) {
+      return ctx.name
+        .reduce((acc, name) => {
+          return acc + " " + name.image;
+        }, "")
+        .trim();
     }
 
     type(ctx) {
@@ -363,8 +429,10 @@ const parse = (text) => {
 
   const lexingResult = lexer.tokenize(text);
   schemeParser.input = lexingResult.tokens;
+  console.log(lexingResult.tokens);
 
   const result = schemeParser.elements();
+  console.log(result);
   const parsetOutput = visitor.visit(result);
 
   if (schemeParser.errors.length > 0) {
