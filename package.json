@@ -9,6 +9,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "chevrotain": "^7.0.1"
+    "moo": "^0.5.1"
+  },
+  "devDependencies": {
+    "nearley": "^2.19.3"
   }
 }
