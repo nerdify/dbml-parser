@@ -61,7 +61,7 @@ enum -> open_enum (enum_def):+ close_enum {%
             return {
               type: 'enum',
               name: match[0][1].value,
-              list: match[1].map((item) => {return item[0].value})
+              items: match[1].map((item) => {return item[0].value})
             }
           }
         %}
