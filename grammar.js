@@ -73,12 +73,22 @@ var grammar = {
           return {
             type: 'enum',
             name: match[0][1].value,
-            items: match[1].map((item) => {return item[0].value})
+            items: match[1].map((item) => item[0])
           }
         }
                 },
     {"name": "open_enum", "symbols": [(lexer.has("enumDf") ? {type: "enumDf"} : enumDf), (lexer.has("name") ? {type: "name"} : name), (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), (lexer.has("NL") ? {type: "NL"} : NL)]},
-    {"name": "enum_def", "symbols": [(lexer.has("name") ? {type: "name"} : name), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": (match) => { return match[0] }},
+    {"name": "enum_def$ebnf$1", "symbols": ["note"], "postprocess": id},
+    {"name": "enum_def$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "enum_def", "symbols": [(lexer.has("name") ? {type: "name"} : name), "enum_def$ebnf$1", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => { 
+          const item = {value: match[0].value}
+          
+          if (match[1]) {
+            item.note = match[1]
+          }
+        
+          return item;
+        } },
     {"name": "close_enum", "symbols": [(lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)]},
     {"name": "table$ebnf$1", "symbols": ["column"]},
     {"name": "table$ebnf$1", "symbols": ["table$ebnf$1", "column"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},

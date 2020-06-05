@@ -62,13 +62,21 @@ enum -> open_enum (enum_def):+ close_enum {%
             return {
               type: 'enum',
               name: match[0][1].value,
-              items: match[1].map((item) => {return item[0].value})
+              items: match[1].map((item) => item[0])
             }
           }
         %}
 
 open_enum -> %enumDf %name %lBraket %NL
-enum_def -> %name %NL {% (match) => { return match[0] } %}
+enum_def -> %name note:? %NL {% (match) => { 
+              const item = {value: match[0].value}
+              
+              if (match[1]) {
+                item.note = match[1]
+              }
+
+              return item;
+            } %}
 close_enum -> %rBraket %NL
 
 table -> open_table column:+ close_table {% (match) => { 
