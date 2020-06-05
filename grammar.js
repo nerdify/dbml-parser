@@ -60,12 +60,16 @@ var grammar = {
     Lexer: lexer,
     ParserRules: [
     {"name": "elements$ebnf$1", "symbols": []},
-    {"name": "elements$ebnf$1$subexpression$1", "symbols": ["table"]},
-    {"name": "elements$ebnf$1$subexpression$1", "symbols": ["enum"]},
-    {"name": "elements$ebnf$1$subexpression$1", "symbols": ["ref"]},
-    {"name": "elements$ebnf$1", "symbols": ["elements$ebnf$1", "elements$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "elements", "symbols": ["elements$ebnf$1"], "postprocess":  (match) => {
-          return match[0].map((item) => {return item[0]});
+    {"name": "elements$ebnf$1", "symbols": ["elements$ebnf$1", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "elements$ebnf$2", "symbols": []},
+    {"name": "elements$ebnf$2$subexpression$1", "symbols": ["table"]},
+    {"name": "elements$ebnf$2$subexpression$1", "symbols": ["enum"]},
+    {"name": "elements$ebnf$2$subexpression$1", "symbols": ["ref"]},
+    {"name": "elements$ebnf$2", "symbols": ["elements$ebnf$2", "elements$ebnf$2$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "elements$ebnf$3", "symbols": []},
+    {"name": "elements$ebnf$3", "symbols": ["elements$ebnf$3", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "elements", "symbols": ["elements$ebnf$1", "elements$ebnf$2", "elements$ebnf$3"], "postprocess":  (match) => {
+          return match[1].map((item) => {return item[0]});
         } },
     {"name": "enum$ebnf$1$subexpression$1", "symbols": ["enum_def"]},
     {"name": "enum$ebnf$1", "symbols": ["enum$ebnf$1$subexpression$1"]},

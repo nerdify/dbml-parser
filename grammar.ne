@@ -56,8 +56,8 @@ const flatten = d => {
 
 @lexer lexer
 
-elements -> (table | enum | ref):* {% (match) => {
-              return match[0].map((item) => {return item[0]});
+elements -> %NL:* (table | enum | ref):* %NL:* {% (match) => {
+              return match[1].map((item) => {return item[0]});
             } %}
 
 enum -> open_enum (enum_def):+ close_enum {% 
