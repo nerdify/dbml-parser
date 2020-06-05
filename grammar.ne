@@ -5,6 +5,7 @@ const lexer = moo.compile({
   tableDf: ["table"],
   enumDf:  ["enum"],
   refDf: /ref[ ]*:/,
+  noteDf: /note[ ]*:/,
 
   lBraket: ["{"],
   rBraket: ["}"],
@@ -17,8 +18,8 @@ const lexer = moo.compile({
   modifier: ["not null", "primary key", "pk", "increment", "unique"],
 
   as: ["as"],
-  quote: ["\""],
-  single_quote: ["'"],
+  d_quote: /\"[^\"]*\"/,
+  s_quote: /\'[^\']*\'/,
   name: /[\w_\(\)\d]+/,
 
   NL: { match:/[\n]+/, lineBreaks: true },
@@ -87,26 +88,51 @@ open_table -> %tableDf %name table_alias:? %lBraket %NL
 table_alias -> %as %name {% (match) => { return match[1] }%}
 close_table -> %rBraket %NL
 
-column -> column_name %name modifier_def:* %NL {% (match) => {
-          const result = {
+column -> column_name %name column_extra:? %NL {% (match) => {
+          let result = {
             name: match[0],
             type: match[1].value,
           }
 
-          if (match[2][0]) {
-            result.modifiers = match[2][0].map((item) => item.value)
+          if (match[2]) {
+            result = {
+              ... result,
+              ...match[2]
+            }
           }
           return result;
-          } %}
-column_name -> %name {% (match) => match[0].value %}
-              | %quote %name:+ %quote {% (match) => {
-                return match[1].map((item) => item.value).join(" ");
-              } %}
-              | %single_quote %name:+ %single_quote {% (match) => {
-                return match[1].map((item) => item.value).join(" ");
-              } %}
+          } %}          
 
-modifier_def -> %lKey modifiers %rKey {% (match) => { return match[1] } %}
+column_name -> %name {% (match) => match[0].value %} 
+               | quote {% id %}
+
+column_extra -> modifier_def {% (match) => {
+                  return {
+                    modifiers: match[0],
+                  }
+                } %}
+                | note {% (match) => {
+                  return {
+                    note: match[0],
+                  }
+                } %}
+                | modifier_def note {% (match) => {
+                  return {
+                    modifiers: match[0],
+                    note: match[1],
+                  }
+                } %}
+                | note modifier_def {% (match) => {
+                  return {
+                    note: match[0],
+                    modifiers: match[1],
+                  }
+                } %}
+
+modifier_def -> %lKey modifiers %rKey {% 
+                (match) => { 
+                    return match[1].map((item) => item.value)
+                } %}
 modifiers -> %modifier {% (match) => [match[0]]   %} |
              modifiers %comma %modifier {% (match) => { return flatten([match[0],match[2]]) } %}
 
@@ -126,3 +152,14 @@ column_ref -> %name %DOT %name {% (match) => {
                 column: match[2].value
               }
             }%}
+
+note -> %lKey %noteDf quote %rKey {% (match) => {
+          return match[2];
+        } %} 
+
+quote -> %d_quote {% (match) => {
+                return match[0].value.replace(/\"/g, '')
+              } %}
+         | %s_quote {% (match) => {
+                return match[0].value.replace(/'/g, '')
+              } %}
