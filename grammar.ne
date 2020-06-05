@@ -6,6 +6,8 @@ const lexer = moo.compile({
   enumDf:  ["enum"],
   refDf: /ref[ ]*:/,
   noteDf: /note[ ]*:/,
+  defaultDf: /default[ ]*:/,
+  number:  /0|[1-9][0-9]*/,
 
   lBraket: ["{"],
   rBraket: ["}"],
@@ -124,10 +126,21 @@ column_extra -> modifier_def {% (match) => {
                     note: match[0],
                   }
                 } %}
+                | default {% (match) => {
+                  return {
+                    default: match[0],
+                  }
+                } %}
                 | modifier_def note {% (match) => {
                   return {
                     modifiers: match[0],
                     note: match[1],
+                  }
+                } %}
+                | modifier_def default {% (match) => {
+                  return {
+                    modifiers: match[0],
+                    default: match[1],
                   }
                 } %}
                 | note modifier_def {% (match) => {
@@ -136,6 +149,66 @@ column_extra -> modifier_def {% (match) => {
                     modifiers: match[1],
                   }
                 } %}
+                | note default {% (match) => {
+                  return {
+                    note: match[0],
+                    default: match[1],
+                  }
+                } %}
+                | default modifier_def{% (match) => {
+                  return {
+                    default: match[0],
+                    modifiers: match[1],
+                  }
+                } %}
+                | default note {% (match) => {
+                  return {
+                    default: match[0],
+                    note: match[1],
+                  }
+                } %}
+                | modifier_def note default {% (match) => {
+                  return {
+                    modifiers: match[0],
+                    note: match[1],
+                    default: match[2],
+                  }
+                } %}
+                | modifier_def default note {% (match) => {
+                  return {
+                    modifiers: match[0],
+                    default: match[1],
+                    note: match[2],
+                  }
+                } %}
+                | note modifier_def default {% (match) => {
+                  return {
+                    note: match[0],
+                    modifiers: match[1],
+                    default: match[2],
+                  }
+                } %}
+                | note default modifier_def {% (match) => {
+                  return {
+                    note: match[0],
+                    default: match[1],
+                    modifiers: match[2],
+                  }
+                } %}
+                | default modifier_def note {% (match) => {
+                  return {
+                    default: match[0],
+                    modifiers: match[1],
+                    note: match[2],
+                  }
+                } %}
+                | default note modifier_def {% (match) => {
+                  return {
+                    default: match[0],
+                    note: match[1],
+                    modifiers: match[2],
+                  }
+                } %}                               
 
 modifier_def -> %lKey modifiers %rKey {% 
                 (match) => { 
@@ -163,7 +236,9 @@ column_ref -> %name %DOT %name {% (match) => {
 
 note -> %lKey %noteDf quote %rKey {% (match) => {
           return match[2];
-        } %} 
+        } %}
+
+default -> %lKey %defaultDf (quote|d_number) %rKey {% (match) => { return match[2][0] } %}
 
 quote -> %d_quote {% (match) => {
                 return match[0].value.replace(/\"/g, '')
@@ -171,3 +246,8 @@ quote -> %d_quote {% (match) => {
          | %s_quote {% (match) => {
                 return match[0].value.replace(/'/g, '')
               } %}
+
+d_number -> %number {% (match) => {return parseInt(match[0]) } %}
+            | %number %DOT %number {% (match) => {
+                return parseFloat(`${match[0]}.${match[2]}`)
+            } %}
