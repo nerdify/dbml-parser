@@ -6,44 +6,45 @@ function id(x) { return x[0]; }
 const moo = require("moo");
 
 const lexer = moo.compile({
-  tableDf: ["table"],
-  enumDf:  ["enum"],
-  refDf: /ref[ ]*:/,
-  noteDf: /note[ ]*:/,
-  defaultDf: /default[ ]*:/,
-  number:  /0|[1-9][0-9]*/,
+    tableDf: ["table"],
+    enumDf:  ["enum"],
+    refDf: /ref[ ]*:/,
+    noteDf: /note[ ]*:/,
+    defaultDf: /default[ ]*:/,
+    number:  /0|[1-9][0-9]*/,
 
-  lBraket: ["{"],
-  rBraket: ["}"],
+    lBraket: ["{"],
+    rBraket: ["}"],
 
-  lKey: ["["],
-  rKey: ["]"],
+    lKey: ["["],
+    rKey: ["]"],
 
-  comma: [","],
+    comma: [","],
 
-  modifier: ["not null", "primary key", "pk", "increment", "unique"],
+    modifier: ["not null", "primary key", "pk", "increment", "unique"],
 
-  as: ["as"],
-  d_quote: /\"[^\"]*\"/,
-  s_quote: /\'[^\']*\'/,
-  name: /[\w_\(\)\d]+/,
+    as: ["as"],
+    d_quote: /\"[^\"]*\"/,
+    s_quote: /\'[^\']*\'/,
+    name: /[\w_\(\)\d]+/,
 
-  NL: { match:/[\n]+/, lineBreaks: true },
-  DOT: /\./,
-  GT: />/,
+    NL: { match:/[\n]+/, lineBreaks: true },
+    DOT: /\./,
+    GT: />/,
 
-  WS: /[ |\t]+/, 
-
+    WS: /[ |\t]+/,  
 });
 
 lexer.next = (next => () => {
 	let tok;
+
 	while (
     (tok = next.call(lexer)) && 
     (
       tok.type === "WS"
     )
   ) {}
+
 	return tok;
 })(lexer.next);
 
