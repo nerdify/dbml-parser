@@ -21,7 +21,7 @@ const lexer = moo.compile({
 
     comma: [","],
 
-    modifier: ["not null", "primary key", "pk", "increment", "unique"],
+    column_setting: ["not null", "null", "primary key", "pk", "increment", "unique"],
 
     as: ["as"],
     d_quote: /\"[^\"]*\"/,
@@ -85,9 +85,7 @@ var grammar = {
         }
                 },
     {"name": "open_enum", "symbols": [(lexer.has("enumDf") ? {type: "enumDf"} : enumDf), (lexer.has("name") ? {type: "name"} : name), (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), (lexer.has("NL") ? {type: "NL"} : NL)]},
-    {"name": "enum_def$ebnf$1", "symbols": ["note"], "postprocess": id},
-    {"name": "enum_def$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "enum_def", "symbols": [(lexer.has("name") ? {type: "name"} : name), "enum_def$ebnf$1", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => { 
+    {"name": "enum_def", "symbols": [(lexer.has("name") ? {type: "name"} : name), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => { 
           const item = {value: match[0].value}
           
           if (match[1]) {
@@ -116,7 +114,7 @@ var grammar = {
     {"name": "open_table", "symbols": [(lexer.has("tableDf") ? {type: "tableDf"} : tableDf), (lexer.has("name") ? {type: "name"} : name), "open_table$ebnf$1", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), (lexer.has("NL") ? {type: "NL"} : NL)]},
     {"name": "table_alias", "symbols": [(lexer.has("as") ? {type: "as"} : as), (lexer.has("name") ? {type: "name"} : name)], "postprocess": (match) => { return match[1] }},
     {"name": "close_table", "symbols": [(lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)]},
-    {"name": "column$ebnf$1", "symbols": ["column_extra"], "postprocess": id},
+    {"name": "column$ebnf$1", "symbols": ["column_setting_def"], "postprocess": id},
     {"name": "column$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
     {"name": "column", "symbols": ["column_name", (lexer.has("name") ? {type: "name"} : name), "column$ebnf$1", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
         let result = {
@@ -127,112 +125,24 @@ var grammar = {
         if (match[2]) {
           result = {
             ... result,
-            ...match[2]
+            settings: match[2]
           }
         }
         return result;
         } },
     {"name": "column_name", "symbols": [(lexer.has("name") ? {type: "name"} : name)], "postprocess": (match) => match[0].value},
     {"name": "column_name", "symbols": ["quote"], "postprocess": id},
-    {"name": "column_extra", "symbols": ["modifier_def"], "postprocess":  (match) => {
-          return {
-            modifiers: match[0],
-          }
-        } },
-    {"name": "column_extra", "symbols": ["note"], "postprocess":  (match) => {
-          return {
-            note: match[0],
-          }
-        } },
-    {"name": "column_extra", "symbols": ["default"], "postprocess":  (match) => {
-          return {
-            default: match[0],
-          }
-        } },
-    {"name": "column_extra", "symbols": ["modifier_def", "note"], "postprocess":  (match) => {
-          return {
-            modifiers: match[0],
-            note: match[1],
-          }
-        } },
-    {"name": "column_extra", "symbols": ["modifier_def", "default"], "postprocess":  (match) => {
-          return {
-            modifiers: match[0],
-            default: match[1],
-          }
-        } },
-    {"name": "column_extra", "symbols": ["note", "modifier_def"], "postprocess":  (match) => {
-          return {
-            note: match[0],
-            modifiers: match[1],
-          }
-        } },
-    {"name": "column_extra", "symbols": ["note", "default"], "postprocess":  (match) => {
-          return {
-            note: match[0],
-            default: match[1],
-          }
-        } },
-    {"name": "column_extra", "symbols": ["default", "modifier_def"], "postprocess":  (match) => {
-          return {
-            default: match[0],
-            modifiers: match[1],
-          }
-        } },
-    {"name": "column_extra", "symbols": ["default", "note"], "postprocess":  (match) => {
-          return {
-            default: match[0],
-            note: match[1],
-          }
-        } },
-    {"name": "column_extra", "symbols": ["modifier_def", "note", "default"], "postprocess":  (match) => {
-          return {
-            modifiers: match[0],
-            note: match[1],
-            default: match[2],
-          }
-        } },
-    {"name": "column_extra", "symbols": ["modifier_def", "default", "note"], "postprocess":  (match) => {
-          return {
-            modifiers: match[0],
-            default: match[1],
-            note: match[2],
-          }
-        } },
-    {"name": "column_extra", "symbols": ["note", "modifier_def", "default"], "postprocess":  (match) => {
-          return {
-            note: match[0],
-            modifiers: match[1],
-            default: match[2],
-          }
-        } },
-    {"name": "column_extra", "symbols": ["note", "default", "modifier_def"], "postprocess":  (match) => {
-          return {
-            note: match[0],
-            default: match[1],
-            modifiers: match[2],
-          }
-        } },
-    {"name": "column_extra", "symbols": ["default", "modifier_def", "note"], "postprocess":  (match) => {
-          return {
-            default: match[0],
-            modifiers: match[1],
-            note: match[2],
-          }
-        } },
-    {"name": "column_extra", "symbols": ["default", "note", "modifier_def"], "postprocess":  (match) => {
-          return {
-            default: match[0],
-            note: match[1],
-            modifiers: match[2],
-          }
-        } },
-    {"name": "modifier_def", "symbols": [(lexer.has("lKey") ? {type: "lKey"} : lKey), "modifiers", (lexer.has("rKey") ? {type: "rKey"} : rKey)], "postprocess":  
+    {"name": "column_setting_def", "symbols": [(lexer.has("lKey") ? {type: "lKey"} : lKey), "column_settings", (lexer.has("rKey") ? {type: "rKey"} : rKey)], "postprocess":  
         (match) => { 
-            return match[1].map((item) => item.value)
+            return match[1]
         } },
-    {"name": "modifiers", "symbols": [(lexer.has("modifier") ? {type: "modifier"} : modifier)], "postprocess": (match) => [match[0]]},
-    {"name": "modifiers", "symbols": ["modifiers", (lexer.has("comma") ? {type: "comma"} : comma), (lexer.has("modifier") ? {type: "modifier"} : modifier)], "postprocess": (match) => { return flatten([match[0],match[2]]) }},
+    {"name": "column_settings$subexpression$1", "symbols": ["column_setting"]},
+    {"name": "column_settings$subexpression$1", "symbols": []},
+    {"name": "column_settings", "symbols": ["column_settings$subexpression$1"], "postprocess": id},
+    {"name": "column_settings", "symbols": ["column_setting", (lexer.has("comma") ? {type: "comma"} : comma), "column_settings"], "postprocess": (match) => { return flatten([match[0],match[2]]) }},
+    {"name": "column_setting", "symbols": [(lexer.has("column_setting") ? {type: "column_setting"} : column_setting)], "postprocess": (match) => { return {type: 'setting', value: match[0].value} }},
+    {"name": "column_setting", "symbols": ["note"], "postprocess": (match) => { return {type: 'note', value: match[0] } }},
+    {"name": "note", "symbols": [(lexer.has("noteDf") ? {type: "noteDf"} : noteDf), "quote"], "postprocess": (match) => match[1]},
     {"name": "ref", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), "column_ref", (lexer.has("GT") ? {type: "GT"} : GT), "column_ref", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": 
         (match) => {
           return {
@@ -248,9 +158,6 @@ var grammar = {
             column: match[2].value
           }
         }},
-    {"name": "note", "symbols": [(lexer.has("lKey") ? {type: "lKey"} : lKey), (lexer.has("noteDf") ? {type: "noteDf"} : noteDf), "quote", (lexer.has("rKey") ? {type: "rKey"} : rKey)], "postprocess":  (match) => {
-          return match[2];
-        } },
     {"name": "default$subexpression$1", "symbols": ["quote"]},
     {"name": "default$subexpression$1", "symbols": ["d_number"]},
     {"name": "default", "symbols": [(lexer.has("lKey") ? {type: "lKey"} : lKey), (lexer.has("defaultDf") ? {type: "defaultDf"} : defaultDf), "default$subexpression$1", (lexer.has("rKey") ? {type: "rKey"} : rKey)], "postprocess": (match) => { return match[2][0] }},

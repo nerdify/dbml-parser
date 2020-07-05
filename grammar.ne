@@ -17,7 +17,7 @@ const lexer = moo.compile({
 
     comma: [","],
 
-    modifier: ["not null", "primary key", "pk", "increment", "unique"],
+    column_setting: ["not null", "null", "primary key", "pk", "increment", "unique"],
 
     as: ["as"],
     d_quote: /\"[^\"]*\"/,
@@ -71,7 +71,7 @@ enum -> open_enum (enum_def):+ close_enum {%
         %}
 
 open_enum -> %enumDf %name %lBraket %NL
-enum_def -> %name note:? %NL {% (match) => { 
+enum_def -> %name %NL {% (match) => { 
               const item = {value: match[0].value}
               
               if (match[1]) {
@@ -99,7 +99,7 @@ open_table -> %tableDf %name table_alias:? %lBraket %NL
 table_alias -> %as %name {% (match) => { return match[1] }%}
 close_table -> %rBraket %NL
 
-column -> column_name %name column_extra:? %NL {% (match) => {
+column -> column_name %name column_setting_def:? %NL {% (match) => {
           let result = {
             name: match[0],
             type: match[1].value,
@@ -108,7 +108,7 @@ column -> column_name %name column_extra:? %NL {% (match) => {
           if (match[2]) {
             result = {
               ... result,
-              ...match[2]
+              settings: match[2]
             }
           }
           return result;
@@ -117,106 +117,19 @@ column -> column_name %name column_extra:? %NL {% (match) => {
 column_name -> %name {% (match) => match[0].value %} 
                | quote {% id %}
 
-column_extra -> modifier_def {% (match) => {
-                  return {
-                    modifiers: match[0],
-                  }
-                } %}
-                | note {% (match) => {
-                  return {
-                    note: match[0],
-                  }
-                } %}
-                | default {% (match) => {
-                  return {
-                    default: match[0],
-                  }
-                } %}
-                | modifier_def note {% (match) => {
-                  return {
-                    modifiers: match[0],
-                    note: match[1],
-                  }
-                } %}
-                | modifier_def default {% (match) => {
-                  return {
-                    modifiers: match[0],
-                    default: match[1],
-                  }
-                } %}
-                | note modifier_def {% (match) => {
-                  return {
-                    note: match[0],
-                    modifiers: match[1],
-                  }
-                } %}
-                | note default {% (match) => {
-                  return {
-                    note: match[0],
-                    default: match[1],
-                  }
-                } %}
-                | default modifier_def{% (match) => {
-                  return {
-                    default: match[0],
-                    modifiers: match[1],
-                  }
-                } %}
-                | default note {% (match) => {
-                  return {
-                    default: match[0],
-                    note: match[1],
-                  }
-                } %}
-                | modifier_def note default {% (match) => {
-                  return {
-                    modifiers: match[0],
-                    note: match[1],
-                    default: match[2],
-                  }
-                } %}
-                | modifier_def default note {% (match) => {
-                  return {
-                    modifiers: match[0],
-                    default: match[1],
-                    note: match[2],
-                  }
-                } %}
-                | note modifier_def default {% (match) => {
-                  return {
-                    note: match[0],
-                    modifiers: match[1],
-                    default: match[2],
-                  }
-                } %}
-                | note default modifier_def {% (match) => {
-                  return {
-                    note: match[0],
-                    default: match[1],
-                    modifiers: match[2],
-                  }
-                } %}
-                | default modifier_def note {% (match) => {
-                  return {
-                    default: match[0],
-                    modifiers: match[1],
-                    note: match[2],
-                  }
-                } %}
-                | default note modifier_def {% (match) => {
-                  return {
-                    default: match[0],
-                    note: match[1],
-                    modifiers: match[2],
-                  }
-                } %}                               
-
-modifier_def -> %lKey modifiers %rKey {% 
+column_setting_def -> %lKey column_settings %rKey {% 
                 (match) => { 
-                    return match[1].map((item) => item.value)
+                    return match[1]
                 } %}
-modifiers -> %modifier {% (match) => [match[0]]   %} |
-             modifiers %comma %modifier {% (match) => { return flatten([match[0],match[2]]) } %}
+
+column_settings -> (column_setting|null) {% id %} |
+             column_setting %comma column_settings {% (match) => { return flatten([match[0],match[2]]) } %}
+
+
+column_setting -> %column_setting {% (match) => { return {type: 'setting', value: match[0].value} }%} |
+                  note {% (match) => { return {type: 'note', value: match[0] } }%}
+
+note -> %noteDf quote {% (match) => match[1] %}
 
 ref -> %refDf column_ref %GT column_ref %NL {%
           (match) => {
@@ -235,11 +148,7 @@ column_ref -> %name %DOT %name {% (match) => {
               }
             }%}
 
-note -> %lKey %noteDf quote %rKey {% (match) => {
-          return match[2];
-        } %}
-
-default -> %lKey %defaultDf (quote|d_number) %rKey {% (match) => { return match[2][0] } %}
+default -> defaultDf (quote|d_number) {% (match) => { return match[2][0] } %}
 
 quote -> %d_quote {% (match) => {
                 return match[0].value.replace(/\"/g, '')
