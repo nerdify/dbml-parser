@@ -21,11 +21,14 @@ const lexer = moo.compile({
 
     comma: [","],
 
-    column_setting: ["not null", "null", "primary key", "pk", "increment", "unique"],
+    column_setting: ["not null", "primary key", "pk", "increment", "unique"],
+    null_value: ["null"],
+    boolean: ["true", "false"],
 
     as: ["as"],
     d_quote: /\"[^\"]*\"/,
     s_quote: /\'[^\']*\'/,
+    t_quote: /\`[^\']*\`/,
     name: /[\w_\(\)\d]+/,
 
     NL: { match:/[\n]+/, lineBreaks: true },
@@ -59,6 +62,92 @@ const flatten = d => {
 var grammar = {
     Lexer: lexer,
     ParserRules: [
+    {"name": "unsigned_int$ebnf$1", "symbols": [/[0-9]/]},
+    {"name": "unsigned_int$ebnf$1", "symbols": ["unsigned_int$ebnf$1", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "unsigned_int", "symbols": ["unsigned_int$ebnf$1"], "postprocess": 
+        function(d) {
+            return parseInt(d[0].join(""));
+        }
+        },
+    {"name": "int$ebnf$1$subexpression$1", "symbols": [{"literal":"-"}]},
+    {"name": "int$ebnf$1$subexpression$1", "symbols": [{"literal":"+"}]},
+    {"name": "int$ebnf$1", "symbols": ["int$ebnf$1$subexpression$1"], "postprocess": id},
+    {"name": "int$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "int$ebnf$2", "symbols": [/[0-9]/]},
+    {"name": "int$ebnf$2", "symbols": ["int$ebnf$2", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "int", "symbols": ["int$ebnf$1", "int$ebnf$2"], "postprocess": 
+        function(d) {
+            if (d[0]) {
+                return parseInt(d[0][0]+d[1].join(""));
+            } else {
+                return parseInt(d[1].join(""));
+            }
+        }
+        },
+    {"name": "unsigned_decimal$ebnf$1", "symbols": [/[0-9]/]},
+    {"name": "unsigned_decimal$ebnf$1", "symbols": ["unsigned_decimal$ebnf$1", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "unsigned_decimal$ebnf$2$subexpression$1$ebnf$1", "symbols": [/[0-9]/]},
+    {"name": "unsigned_decimal$ebnf$2$subexpression$1$ebnf$1", "symbols": ["unsigned_decimal$ebnf$2$subexpression$1$ebnf$1", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "unsigned_decimal$ebnf$2$subexpression$1", "symbols": [{"literal":"."}, "unsigned_decimal$ebnf$2$subexpression$1$ebnf$1"]},
+    {"name": "unsigned_decimal$ebnf$2", "symbols": ["unsigned_decimal$ebnf$2$subexpression$1"], "postprocess": id},
+    {"name": "unsigned_decimal$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "unsigned_decimal", "symbols": ["unsigned_decimal$ebnf$1", "unsigned_decimal$ebnf$2"], "postprocess": 
+        function(d) {
+            return parseFloat(
+                d[0].join("") +
+                (d[1] ? "."+d[1][1].join("") : "")
+            );
+        }
+        },
+    {"name": "decimal$ebnf$1", "symbols": [{"literal":"-"}], "postprocess": id},
+    {"name": "decimal$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "decimal$ebnf$2", "symbols": [/[0-9]/]},
+    {"name": "decimal$ebnf$2", "symbols": ["decimal$ebnf$2", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "decimal$ebnf$3$subexpression$1$ebnf$1", "symbols": [/[0-9]/]},
+    {"name": "decimal$ebnf$3$subexpression$1$ebnf$1", "symbols": ["decimal$ebnf$3$subexpression$1$ebnf$1", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "decimal$ebnf$3$subexpression$1", "symbols": [{"literal":"."}, "decimal$ebnf$3$subexpression$1$ebnf$1"]},
+    {"name": "decimal$ebnf$3", "symbols": ["decimal$ebnf$3$subexpression$1"], "postprocess": id},
+    {"name": "decimal$ebnf$3", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "decimal", "symbols": ["decimal$ebnf$1", "decimal$ebnf$2", "decimal$ebnf$3"], "postprocess": 
+        function(d) {
+            return parseFloat(
+                (d[0] || "") +
+                d[1].join("") +
+                (d[2] ? "."+d[2][1].join("") : "")
+            );
+        }
+        },
+    {"name": "percentage", "symbols": ["decimal", {"literal":"%"}], "postprocess": 
+        function(d) {
+            return d[0]/100;
+        }
+        },
+    {"name": "jsonfloat$ebnf$1", "symbols": [{"literal":"-"}], "postprocess": id},
+    {"name": "jsonfloat$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "jsonfloat$ebnf$2", "symbols": [/[0-9]/]},
+    {"name": "jsonfloat$ebnf$2", "symbols": ["jsonfloat$ebnf$2", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "jsonfloat$ebnf$3$subexpression$1$ebnf$1", "symbols": [/[0-9]/]},
+    {"name": "jsonfloat$ebnf$3$subexpression$1$ebnf$1", "symbols": ["jsonfloat$ebnf$3$subexpression$1$ebnf$1", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "jsonfloat$ebnf$3$subexpression$1", "symbols": [{"literal":"."}, "jsonfloat$ebnf$3$subexpression$1$ebnf$1"]},
+    {"name": "jsonfloat$ebnf$3", "symbols": ["jsonfloat$ebnf$3$subexpression$1"], "postprocess": id},
+    {"name": "jsonfloat$ebnf$3", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "jsonfloat$ebnf$4$subexpression$1$ebnf$1", "symbols": [/[+-]/], "postprocess": id},
+    {"name": "jsonfloat$ebnf$4$subexpression$1$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "jsonfloat$ebnf$4$subexpression$1$ebnf$2", "symbols": [/[0-9]/]},
+    {"name": "jsonfloat$ebnf$4$subexpression$1$ebnf$2", "symbols": ["jsonfloat$ebnf$4$subexpression$1$ebnf$2", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "jsonfloat$ebnf$4$subexpression$1", "symbols": [/[eE]/, "jsonfloat$ebnf$4$subexpression$1$ebnf$1", "jsonfloat$ebnf$4$subexpression$1$ebnf$2"]},
+    {"name": "jsonfloat$ebnf$4", "symbols": ["jsonfloat$ebnf$4$subexpression$1"], "postprocess": id},
+    {"name": "jsonfloat$ebnf$4", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "jsonfloat", "symbols": ["jsonfloat$ebnf$1", "jsonfloat$ebnf$2", "jsonfloat$ebnf$3", "jsonfloat$ebnf$4"], "postprocess": 
+        function(d) {
+            return parseFloat(
+                (d[0] || "") +
+                d[1].join("") +
+                (d[2] ? "."+d[2][1].join("") : "") +
+                (d[3] ? "e" + (d[3][1] || "+") + d[3][2].join("") : "")
+            );
+        }
+        },
     {"name": "elements$ebnf$1", "symbols": []},
     {"name": "elements$ebnf$1", "symbols": ["elements$ebnf$1", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "elements$ebnf$2", "symbols": []},
@@ -141,7 +230,11 @@ var grammar = {
     {"name": "column_settings", "symbols": ["column_settings$subexpression$1"], "postprocess": id},
     {"name": "column_settings", "symbols": ["column_setting", (lexer.has("comma") ? {type: "comma"} : comma), "column_settings"], "postprocess": (match) => { return flatten([match[0],match[2]]) }},
     {"name": "column_setting", "symbols": [(lexer.has("column_setting") ? {type: "column_setting"} : column_setting)], "postprocess": (match) => { return {type: 'setting', value: match[0].value} }},
-    {"name": "column_setting", "symbols": ["note"], "postprocess": (match) => { return {type: 'note', value: match[0] } }},
+    {"name": "column_setting", "symbols": [(lexer.has("null_value") ? {type: "null_value"} : null_value)], "postprocess": (match) => { return {type: 'setting', value: 'null' } }},
+    {"name": "column_setting", "symbols": ["note"], "postprocess": (match) => { return {type: 'note', value: match[0]} }},
+    {"name": "column_setting", "symbols": ["default"], "postprocess": (match) => { return {type: 'default', value: match[0]} }},
+    {"name": "column_setting", "symbols": ["default_expression"], "postprocess": (match) => { return {type: 'default', expression: true, value: match[0]} }},
+    {"name": "column_setting", "symbols": ["default_null"], "postprocess": (match) => { return {type: 'default', value: null} }},
     {"name": "note", "symbols": [(lexer.has("noteDf") ? {type: "noteDf"} : noteDf), "quote"], "postprocess": (match) => match[1]},
     {"name": "ref", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), "column_ref", (lexer.has("GT") ? {type: "GT"} : GT), "column_ref", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": 
         (match) => {
@@ -158,19 +251,20 @@ var grammar = {
             column: match[2].value
           }
         }},
-    {"name": "default$subexpression$1", "symbols": ["quote"]},
-    {"name": "default$subexpression$1", "symbols": ["d_number"]},
-    {"name": "default", "symbols": [(lexer.has("lKey") ? {type: "lKey"} : lKey), (lexer.has("defaultDf") ? {type: "defaultDf"} : defaultDf), "default$subexpression$1", (lexer.has("rKey") ? {type: "rKey"} : rKey)], "postprocess": (match) => { return match[2][0] }},
+    {"name": "default", "symbols": [(lexer.has("defaultDf") ? {type: "defaultDf"} : defaultDf), (lexer.has("s_quote") ? {type: "s_quote"} : s_quote)], "postprocess": (match) => { return match[1].value.replace(/'/g, '') }},
+    {"name": "default", "symbols": [(lexer.has("defaultDf") ? {type: "defaultDf"} : defaultDf), "d_number"], "postprocess": (match) => { return match[1][0] }},
+    {"name": "default", "symbols": [(lexer.has("defaultDf") ? {type: "defaultDf"} : defaultDf), (lexer.has("boolean") ? {type: "boolean"} : boolean)], "postprocess": (match) => { return match[1].value === 'true' }},
+    {"name": "default_null", "symbols": [(lexer.has("defaultDf") ? {type: "defaultDf"} : defaultDf), (lexer.has("null_value") ? {type: "null_value"} : null_value)], "postprocess": (match) => { return match[1] }},
+    {"name": "default_expression", "symbols": [(lexer.has("defaultDf") ? {type: "defaultDf"} : defaultDf), (lexer.has("t_quote") ? {type: "t_quote"} : t_quote)], "postprocess": (match) => { return match[1].value.replace(/`/g, '') }},
     {"name": "quote", "symbols": [(lexer.has("d_quote") ? {type: "d_quote"} : d_quote)], "postprocess":  (match) => {
           return match[0].value.replace(/\"/g, '')
         } },
     {"name": "quote", "symbols": [(lexer.has("s_quote") ? {type: "s_quote"} : s_quote)], "postprocess":  (match) => {
           return match[0].value.replace(/'/g, '')
         } },
-    {"name": "d_number", "symbols": [(lexer.has("number") ? {type: "number"} : number)], "postprocess": (match) => {return parseInt(match[0]) }},
-    {"name": "d_number", "symbols": [(lexer.has("number") ? {type: "number"} : number), (lexer.has("DOT") ? {type: "DOT"} : DOT), (lexer.has("number") ? {type: "number"} : number)], "postprocess":  (match) => {
-            return parseFloat(`${match[0]}.${match[2]}`)
-        } }
+    {"name": "d_number$subexpression$1", "symbols": ["int"]},
+    {"name": "d_number$subexpression$1", "symbols": ["decimal"]},
+    {"name": "d_number", "symbols": ["d_number$subexpression$1"], "postprocess": id}
 ]
   , ParserStart: "elements"
 }

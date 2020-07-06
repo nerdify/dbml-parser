@@ -1,3 +1,4 @@
+@builtin "number.ne"
 @{%
 const moo = require("moo");
 
@@ -17,11 +18,14 @@ const lexer = moo.compile({
 
     comma: [","],
 
-    column_setting: ["not null", "null", "primary key", "pk", "increment", "unique"],
+    column_setting: ["not null", "primary key", "pk", "increment", "unique"],
+    null_value: ["null"],
+    boolean: ["true", "false"],
 
     as: ["as"],
     d_quote: /\"[^\"]*\"/,
     s_quote: /\'[^\']*\'/,
+    t_quote: /\`[^\']*\`/,
     name: /[\w_\(\)\d]+/,
 
     NL: { match:/[\n]+/, lineBreaks: true },
@@ -125,9 +129,12 @@ column_setting_def -> %lKey column_settings %rKey {%
 column_settings -> (column_setting|null) {% id %} |
              column_setting %comma column_settings {% (match) => { return flatten([match[0],match[2]]) } %}
 
-
-column_setting -> %column_setting {% (match) => { return {type: 'setting', value: match[0].value} }%} |
-                  note {% (match) => { return {type: 'note', value: match[0] } }%}
+column_setting -> %column_setting {% (match) => { return {type: 'setting', value: match[0].value} }%}
+                  | %null_value {% (match) => { return {type: 'setting', value: 'null' } }%}
+                  | note {% (match) => { return {type: 'note', value: match[0]} } %}
+                  | default {% (match) => { return {type: 'default', value: match[0]} } %}
+                  | default_expression {% (match) => { return {type: 'default', expression: true, value: match[0]} } %}
+                  | default_null {% (match) => { return {type: 'default', value: null} } %}
 
 note -> %noteDf quote {% (match) => match[1] %}
 
@@ -148,7 +155,13 @@ column_ref -> %name %DOT %name {% (match) => {
               }
             }%}
 
-default -> defaultDf (quote|d_number) {% (match) => { return match[2][0] } %}
+default -> %defaultDf %s_quote {% (match) => { return match[1].value.replace(/'/g, '') } %}
+          | %defaultDf d_number {% (match) => { return match[1][0] } %}
+          | %defaultDf %boolean {% (match) => { return match[1].value === 'true' } %}
+
+default_null -> %defaultDf %null_value {% (match) => { return match[1] } %}
+
+default_expression -> %defaultDf %t_quote {% (match) => { return match[1].value.replace(/`/g, '') } %}
 
 quote -> %d_quote {% (match) => {
                 return match[0].value.replace(/\"/g, '')
@@ -157,7 +170,4 @@ quote -> %d_quote {% (match) => {
                 return match[0].value.replace(/'/g, '')
               } %}
 
-d_number -> %number {% (match) => {return parseInt(match[0]) } %}
-            | %number %DOT %number {% (match) => {
-                return parseFloat(`${match[0]}.${match[2]}`)
-            } %}
+d_number -> (int|decimal) {% id %}
