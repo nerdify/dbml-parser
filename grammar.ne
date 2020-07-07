@@ -23,14 +23,17 @@ const lexer = moo.compile({
     boolean: ["true", "false"],
 
     as: ["as"],
-    d_quote: /\"[^\"]*\"/,
-    s_quote: /\'[^\']*\'/,
-    t_quote: /\`[^\']*\`/,
+    d_quote: /\"[^"]*\"/,
+    s_quote: /\'[^']*\'/,
+    t_quote: /\`[^`]*\`/,
     name: /[\w_\(\)\d]+/,
 
     NL: { match:/[\n]+/, lineBreaks: true },
     DOT: /\./,
     GT: />/,
+    LT: /</,
+    DASH: /\-/,
+
 
     WS: /[ |\t]+/,  
 });
@@ -135,8 +138,31 @@ column_setting -> %column_setting {% (match) => { return {type: 'setting', value
                   | default {% (match) => { return {type: 'default', value: match[0]} } %}
                   | default_expression {% (match) => { return {type: 'default', expression: true, value: match[0]} } %}
                   | default_null {% (match) => { return {type: 'default', value: null} } %}
+                  | inline_rel {% (match) => { return {...match[0]} } %}
 
 note -> %noteDf quote {% (match) => match[1] %}
+
+inline_rel -> %refDf %GT column_ref {% (match) => {
+                          return {
+                            type: 'relationship',
+                            cardinality: 'many-to-one',
+                            ...match[2],
+                          }
+                        } %}
+              | %refDf %LT column_ref {% (match) => {
+                          return {
+                            type: 'relationship',
+                            cardinality: 'one-to-many',
+                            ...match[2],
+                          }
+                        } %}
+              | %refDf %DASH column_ref {% (match) => {
+                          return {
+                            type: 'relationship',
+                            cardinality: 'one-to-one',
+                            ...match[2],
+                          }
+                        } %}                                 
 
 ref -> %refDf column_ref %GT column_ref %NL {%
           (match) => {

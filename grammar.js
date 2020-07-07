@@ -26,14 +26,17 @@ const lexer = moo.compile({
     boolean: ["true", "false"],
 
     as: ["as"],
-    d_quote: /\"[^\"]*\"/,
-    s_quote: /\'[^\']*\'/,
-    t_quote: /\`[^\']*\`/,
+    d_quote: /\"[^"]*\"/,
+    s_quote: /\'[^']*\'/,
+    t_quote: /\`[^`]*\`/,
     name: /[\w_\(\)\d]+/,
 
     NL: { match:/[\n]+/, lineBreaks: true },
     DOT: /\./,
     GT: />/,
+    LT: /</,
+    DASH: /\-/,
+
 
     WS: /[ |\t]+/,  
 });
@@ -235,7 +238,29 @@ var grammar = {
     {"name": "column_setting", "symbols": ["default"], "postprocess": (match) => { return {type: 'default', value: match[0]} }},
     {"name": "column_setting", "symbols": ["default_expression"], "postprocess": (match) => { return {type: 'default', expression: true, value: match[0]} }},
     {"name": "column_setting", "symbols": ["default_null"], "postprocess": (match) => { return {type: 'default', value: null} }},
+    {"name": "column_setting", "symbols": ["inline_rel"], "postprocess": (match) => { return {...match[0]} }},
     {"name": "note", "symbols": [(lexer.has("noteDf") ? {type: "noteDf"} : noteDf), "quote"], "postprocess": (match) => match[1]},
+    {"name": "inline_rel", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), (lexer.has("GT") ? {type: "GT"} : GT), "column_ref"], "postprocess":  (match) => {
+          return {
+            type: 'relationship',
+            cardinality: 'many-to-one',
+            ...match[2],
+          }
+        } },
+    {"name": "inline_rel", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), (lexer.has("LT") ? {type: "LT"} : LT), "column_ref"], "postprocess":  (match) => {
+          return {
+            type: 'relationship',
+            cardinality: 'one-to-many',
+            ...match[2],
+          }
+        } },
+    {"name": "inline_rel", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), (lexer.has("DASH") ? {type: "DASH"} : DASH), "column_ref"], "postprocess":  (match) => {
+          return {
+            type: 'relationship',
+            cardinality: 'one-to-one',
+            ...match[2],
+          }
+        } },
     {"name": "ref", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), "column_ref", (lexer.has("GT") ? {type: "GT"} : GT), "column_ref", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": 
         (match) => {
           return {
