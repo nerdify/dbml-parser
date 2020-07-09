@@ -29,7 +29,7 @@ const lexer = moo.compile({
     d_quote: /\"[^"]*\"/,
     s_quote: /\'[^']*\'/,
     t_quote: /\`[^`]*\`/,
-    name: /[\w_\(\)\d]+/,
+    name: /[\w_\(\)\d,]+/,
 
     NL: { match:/[\n]+/, lineBreaks: true },
     DOT: /\./,

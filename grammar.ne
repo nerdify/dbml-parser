@@ -26,7 +26,7 @@ const lexer = moo.compile({
     d_quote: /\"[^"]*\"/,
     s_quote: /\'[^']*\'/,
     t_quote: /\`[^`]*\`/,
-    name: /[\w_\(\)\d]+/,
+    name: /[\w_\(\)\d,]+/,
 
     NL: { match:/[\n]+/, lineBreaks: true },
     DOT: /\./,
@@ -162,8 +162,8 @@ inline_rel -> %refDf %GT column_ref {% (match) => {
                             cardinality: 'one-to-one',
                             ...match[2],
                           }
-                        } %}                                 
-
+                        } %}
+                        
 ref -> %refDf column_ref %GT column_ref %NL {%
           (match) => {
             return {
