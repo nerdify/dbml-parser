@@ -242,34 +242,53 @@ var grammar = {
     {"name": "note", "symbols": [(lexer.has("noteDf") ? {type: "noteDf"} : noteDf), "quote"], "postprocess": (match) => match[1]},
     {"name": "inline_rel", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), (lexer.has("GT") ? {type: "GT"} : GT), "column_ref"], "postprocess":  (match) => {
           return {
-            type: 'relationship',
+            type: 'inline_relationship',
             cardinality: 'many-to-one',
             ...match[2],
           }
         } },
     {"name": "inline_rel", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), (lexer.has("LT") ? {type: "LT"} : LT), "column_ref"], "postprocess":  (match) => {
           return {
-            type: 'relationship',
+            type: 'inline_relationship',
             cardinality: 'one-to-many',
             ...match[2],
           }
         } },
     {"name": "inline_rel", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), (lexer.has("DASH") ? {type: "DASH"} : DASH), "column_ref"], "postprocess":  (match) => {
           return {
-            type: 'relationship',
+            type: 'inline_relationship',
             cardinality: 'one-to-one',
             ...match[2],
           }
         } },
+    {"name": "ref", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), "column_ref", (lexer.has("LT") ? {type: "LT"} : LT), "column_ref", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": 
+        (match) => {
+          return {
+            type: 'relationship',
+            primary: match[1],
+            foreign: match[3],
+          }
+        }
+                      },
     {"name": "ref", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), "column_ref", (lexer.has("GT") ? {type: "GT"} : GT), "column_ref", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": 
         (match) => {
           return {
-            type: "ref",
+            type: 'relationship',
+            primary: match[3],
             foreign: match[1],
-            primary: match[3]
           }
         }
-               },
+                      },
+    {"name": "ref", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), "column_ref", (lexer.has("DASH") ? {type: "DASH"} : DASH), "column_ref", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": 
+        (match) => {
+          return {
+            type: 'relationship',
+            isOneToOne: true,
+            primary: match[1],
+            foreign: match[3],
+          }
+        }
+                      },
     {"name": "column_ref", "symbols": [(lexer.has("name") ? {type: "name"} : name), (lexer.has("DOT") ? {type: "DOT"} : DOT), (lexer.has("name") ? {type: "name"} : name)], "postprocess":  (match) => {
           return {
             table: match[0].value,

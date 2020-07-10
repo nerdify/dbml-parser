@@ -64,3 +64,67 @@ test("Table Columns Parsing", () => {
     ])
   );
 });
+
+test("Short References Parsing", () => {
+  const sqltext = `
+  table companies {
+    id integer
+  }
+
+  table users {
+    id integer
+    company_id integer
+  }
+
+  table user_infos {
+    id integer
+    user_id integer
+  }
+
+  table roles {
+    id integer
+    user_id integer
+  }
+
+  ref: users.id < roles.user_id
+  ref: users.company_id > companies.id
+  ref: users.id - users_info.user_id
+  `;
+
+  const result = parse(sqltext);
+
+  expect(result).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: "table",
+        name: "users",
+      }),
+      expect.objectContaining({
+        type: "table",
+        name: "roles",
+      }),
+      expect.objectContaining({
+        type: "relationship",
+        primary: expect.objectContaining({ table: "users", column: "id" }),
+        foreign: expect.objectContaining({ table: "roles", column: "user_id" }),
+      }),
+      expect.objectContaining({
+        type: "relationship",
+        primary: expect.objectContaining({ table: "companies", column: "id" }),
+        foreign: expect.objectContaining({
+          table: "users",
+          column: "company_id",
+        }),
+      }),
+      expect.objectContaining({
+        type: "relationship",
+        primary: expect.objectContaining({ table: "users", column: "id" }),
+        isOneToOne: true,
+        foreign: expect.objectContaining({
+          table: "users_info",
+          column: "user_id",
+        }),
+      }),
+    ])
+  );
+});

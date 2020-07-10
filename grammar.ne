@@ -144,35 +144,54 @@ note -> %noteDf quote {% (match) => match[1] %}
 
 inline_rel -> %refDf %GT column_ref {% (match) => {
                           return {
-                            type: 'relationship',
+                            type: 'inline_relationship',
                             cardinality: 'many-to-one',
                             ...match[2],
                           }
                         } %}
               | %refDf %LT column_ref {% (match) => {
                           return {
-                            type: 'relationship',
+                            type: 'inline_relationship',
                             cardinality: 'one-to-many',
                             ...match[2],
                           }
                         } %}
               | %refDf %DASH column_ref {% (match) => {
                           return {
-                            type: 'relationship',
+                            type: 'inline_relationship',
                             cardinality: 'one-to-one',
                             ...match[2],
                           }
                         } %}
                         
-ref -> %refDf column_ref %GT column_ref %NL {%
-          (match) => {
-            return {
-              type: "ref",
-              foreign: match[1],
-              primary: match[3]
-            }
-          }
-       %} 
+ref -> %refDf column_ref %LT column_ref %NL {%
+                  (match) => {
+                    return {
+                      type: 'relationship',
+                      primary: match[1],
+                      foreign: match[3],
+                    }
+                  }
+              %} 
+        | %refDf column_ref %GT column_ref %NL {%
+                  (match) => {
+                    return {
+                      type: 'relationship',
+                      primary: match[3],
+                      foreign: match[1],
+                    }
+                  }
+              %}
+        | %refDf column_ref %DASH column_ref %NL {%
+                  (match) => {
+                    return {
+                      type: 'relationship',
+                      isOneToOne: true,
+                      primary: match[1],
+                      foreign: match[3],
+                    }
+                  }
+              %}      
 
 column_ref -> %name %DOT %name {% (match) => {
               return {
