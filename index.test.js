@@ -129,12 +129,13 @@ test("Short References Parsing", () => {
   );
 });
 
-test("Columns Settings Settings", () => {
+test("Basic Columns Settings", () => {
   const sqltext = `
   table users {
     id integer [pk]
     name varchar(20) [not null]
     email varchar [not null, unique]
+    address text [null]
   }
 
   table roles {
@@ -188,6 +189,16 @@ test("Columns Settings Settings", () => {
               }),
             ]),
           }),
+          expect.objectContaining({
+            name: "address",
+            type: "text",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "null",
+              }),
+            ]),
+          }),
         ]),
       }),
       expect.objectContaining({
@@ -221,6 +232,166 @@ test("Columns Settings Settings", () => {
               expect.objectContaining({
                 type: "setting",
                 value: "increment",
+              }),
+            ]),
+          }),
+        ]),
+      }),
+    ])
+  );
+});
+
+test("Note Columns Settings", () => {
+  const sqltext = `
+  table users {
+    id integer [pk, note: 'user id']
+    name varchar(20) [not null, note: "user name"]
+    email varchar [not null, unique]
+  }
+  `;
+
+  const result = parse(sqltext);
+
+  expect(result).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: "table",
+        name: "users",
+        columns: expect.arrayContaining([
+          expect.objectContaining({
+            name: "id",
+            type: "integer",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "primary",
+              }),
+              expect.objectContaining({
+                type: "note",
+                value: "user id",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            name: "name",
+            type: "varchar(20)",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "not null",
+              }),
+              expect.objectContaining({
+                type: "note",
+                value: "user name",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            name: "email",
+            type: "varchar",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "not null",
+              }),
+              expect.objectContaining({
+                type: "setting",
+                value: "unique",
+              }),
+            ]),
+          }),
+        ]),
+      }),
+    ])
+  );
+});
+
+test("Default Columns Settings", () => {
+  const sqltext = `
+  table users {
+    id integer [primary key]
+    username varchar(255) [not null, unique, default: 'user_name login']
+    full_name varchar(255) [not null]
+    gender varchar(1) [default: 'm']
+    created_at timestamp [default: \`now()\`]
+    rating integer [default: 10]
+    }
+  `;
+
+  const result = parse(sqltext);
+
+  expect(result).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: "table",
+        name: "users",
+        columns: expect.arrayContaining([
+          expect.objectContaining({
+            name: "id",
+            type: "integer",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "primary",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            name: "username",
+            type: "varchar(255)",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "not null",
+              }),
+              expect.objectContaining({
+                type: "setting",
+                value: "unique",
+              }),
+              expect.objectContaining({
+                type: "default",
+                value: "user_name login",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            name: "full_name",
+            type: "varchar(255)",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "not null",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            name: "gender",
+            type: "varchar(1)",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "default",
+                value: "m",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            name: "created_at",
+            type: "timestamp",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "default",
+                value: "now()",
+                expression: true,
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            name: "rating",
+            type: "integer",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "default",
+                value: 10,
               }),
             ]),
           }),
