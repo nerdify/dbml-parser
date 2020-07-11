@@ -21,7 +21,8 @@ const lexer = moo.compile({
 
     comma: [","],
 
-    column_setting: ["not null", "primary key", "pk", "increment", "unique"],
+    column_setting: ["not null", "increment", "unique"],
+    primary_key: ["primary key", "pk"],
     null_value: ["null"],
     boolean: ["true", "false"],
 
@@ -233,6 +234,7 @@ var grammar = {
     {"name": "column_settings", "symbols": ["column_settings$subexpression$1"], "postprocess": id},
     {"name": "column_settings", "symbols": ["column_setting", (lexer.has("comma") ? {type: "comma"} : comma), "column_settings"], "postprocess": (match) => { return flatten([match[0],match[2]]) }},
     {"name": "column_setting", "symbols": [(lexer.has("column_setting") ? {type: "column_setting"} : column_setting)], "postprocess": (match) => { return {type: 'setting', value: match[0].value} }},
+    {"name": "column_setting", "symbols": [(lexer.has("primary_key") ? {type: "primary_key"} : primary_key)], "postprocess": (match) => { return {type: 'setting', value: 'primary'} }},
     {"name": "column_setting", "symbols": [(lexer.has("null_value") ? {type: "null_value"} : null_value)], "postprocess": (match) => { return {type: 'setting', value: 'null' } }},
     {"name": "column_setting", "symbols": ["note"], "postprocess": (match) => { return {type: 'note', value: match[0]} }},
     {"name": "column_setting", "symbols": ["default"], "postprocess": (match) => { return {type: 'default', value: match[0]} }},

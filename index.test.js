@@ -128,3 +128,104 @@ test("Short References Parsing", () => {
     ])
   );
 });
+
+test("Columns Settings Settings", () => {
+  const sqltext = `
+  table users {
+    id integer [pk]
+    name varchar(20) [not null]
+    email varchar [not null, unique]
+  }
+
+  table roles {
+    id integer [primary key] 
+  }
+
+  table products {
+    id integer [pk, increment] 
+  }
+  `;
+
+  const result = parse(sqltext);
+
+  expect(result).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: "table",
+        name: "users",
+        columns: expect.arrayContaining([
+          expect.objectContaining({
+            name: "id",
+            type: "integer",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "primary",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            name: "name",
+            type: "varchar(20)",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "not null",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            name: "email",
+            type: "varchar",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "not null",
+              }),
+              expect.objectContaining({
+                type: "setting",
+                value: "unique",
+              }),
+            ]),
+          }),
+        ]),
+      }),
+      expect.objectContaining({
+        type: "table",
+        name: "roles",
+        columns: expect.arrayContaining([
+          expect.objectContaining({
+            name: "id",
+            type: "integer",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "primary",
+              }),
+            ]),
+          }),
+        ]),
+      }),
+      expect.objectContaining({
+        type: "table",
+        name: "products",
+        columns: expect.arrayContaining([
+          expect.objectContaining({
+            name: "id",
+            type: "integer",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "primary",
+              }),
+              expect.objectContaining({
+                type: "setting",
+                value: "increment",
+              }),
+            ]),
+          }),
+        ]),
+      }),
+    ])
+  );
+});

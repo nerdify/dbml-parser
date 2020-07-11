@@ -18,7 +18,8 @@ const lexer = moo.compile({
 
     comma: [","],
 
-    column_setting: ["not null", "primary key", "pk", "increment", "unique"],
+    column_setting: ["not null", "increment", "unique"],
+    primary_key: ["primary key", "pk"],
     null_value: ["null"],
     boolean: ["true", "false"],
 
@@ -133,6 +134,7 @@ column_settings -> (column_setting|null) {% id %} |
              column_setting %comma column_settings {% (match) => { return flatten([match[0],match[2]]) } %}
 
 column_setting -> %column_setting {% (match) => { return {type: 'setting', value: match[0].value} }%}
+                  | %primary_key {% (match) => { return {type: 'setting', value: 'primary'} }%}
                   | %null_value {% (match) => { return {type: 'setting', value: 'null' } }%}
                   | note {% (match) => { return {type: 'note', value: match[0]} } %}
                   | default {% (match) => { return {type: 'default', value: match[0]} } %}
