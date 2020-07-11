@@ -27,7 +27,7 @@ test("Table Columns Parsing", () => {
     id integer
     name text
     created_at datetime
-    height decime(1,2)
+    height decimal(1, 2)
   }
 
   table roles as R {
@@ -48,7 +48,7 @@ test("Table Columns Parsing", () => {
           expect.objectContaining({ name: "id", type: "integer" }),
           expect.objectContaining({ name: "name", type: "text" }),
           expect.objectContaining({ name: "created_at", type: "datetime" }),
-          expect.objectContaining({ name: "height", type: "decime(1,2)" }),
+          expect.objectContaining({ name: "height", type: "decimal(1,2)" }),
         ]),
       }),
       expect.objectContaining({
@@ -392,6 +392,119 @@ test("Default Columns Settings", () => {
               expect.objectContaining({
                 type: "default",
                 value: 10,
+              }),
+            ]),
+          }),
+        ]),
+      }),
+    ])
+  );
+});
+
+test("Inline Ref Columns Settings", () => {
+  const sqltext = `
+  table users {
+    id integer [pk, ref: < likes.user_id, ref: < posts.user_id]
+    name varchar(20) [not null]
+    email varchar [not null, unique]
+    address text [null]
+  }
+
+  table roles {
+    id integer [primary key] 
+    user_id integer [ref: > users.id ]
+  }
+  `;
+
+  const result = parse(sqltext);
+
+  expect(result).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: "table",
+        name: "users",
+        columns: expect.arrayContaining([
+          expect.objectContaining({
+            name: "id",
+            type: "integer",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "primary",
+              }),
+              expect.objectContaining({
+                type: "inline_relationship",
+                cardinality: "one-to-many",
+                table: "likes",
+                column: "user_id",
+              }),
+              expect.objectContaining({
+                type: "inline_relationship",
+                cardinality: "one-to-many",
+                table: "posts",
+                column: "user_id",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            name: "name",
+            type: "varchar(20)",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "not null",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            name: "email",
+            type: "varchar",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "not null",
+              }),
+              expect.objectContaining({
+                type: "setting",
+                value: "unique",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            name: "address",
+            type: "text",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "null",
+              }),
+            ]),
+          }),
+        ]),
+      }),
+      expect.objectContaining({
+        type: "table",
+        name: "roles",
+        columns: expect.arrayContaining([
+          expect.objectContaining({
+            name: "id",
+            type: "integer",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "setting",
+                value: "primary",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            name: "user_id",
+            type: "integer",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "inline_relationship",
+                cardinality: "many-to-one",
+                table: "users",
+                column: "id",
               }),
             ]),
           }),

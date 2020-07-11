@@ -16,6 +16,9 @@ const lexer = moo.compile({
     lKey: ["["],
     rKey: ["]"],
 
+    lP: /\(/,
+    rP: /\)/,
+
     comma: [","],
 
     column_setting: ["not null", "increment", "unique"],
@@ -27,7 +30,8 @@ const lexer = moo.compile({
     d_quote: /\"[^"]*\"/,
     s_quote: /\'[^']*\'/,
     t_quote: /\`[^`]*\`/,
-    name: /[\w_\(\)\d,]+/,
+    name: /[\w_\d]+/,
+    
 
     NL: { match:/[\n]+/, lineBreaks: true },
     DOT: /\./,
@@ -107,10 +111,10 @@ open_table -> %tableDf %name table_alias:? %lBraket %NL
 table_alias -> %as %name {% (match) => { return match[1] }%}
 close_table -> %rBraket %NL
 
-column -> column_name %name column_setting_def:? %NL {% (match) => {
+column -> column_name column_type column_setting_def:? %NL {% (match) => {
           let result = {
             name: match[0],
-            type: match[1].value,
+            type: match[1],
           }
 
           if (match[2]) {
@@ -209,6 +213,11 @@ default -> %defaultDf %s_quote {% (match) => { return match[1].value.replace(/'/
 default_null -> %defaultDf %null_value {% (match) => { return match[1] } %}
 
 default_expression -> %defaultDf %t_quote {% (match) => { return match[1].value.replace(/`/g, '') } %}
+
+#TODO: Check exist a function with more two parameters
+column_type -> %name {% (match) => {return match[0].value} %} 
+              | %name %lP d_number %rP {% (match) => { return `${match[0]}(${match[2]})` } %}
+              | %name %lP d_number %comma  d_number %rP {% (match) => { return `${match[0]}(${match[2]},${match[4]})` } %}
 
 quote -> %d_quote {% (match) => {
                 return match[0].value.replace(/\"/g, '')
