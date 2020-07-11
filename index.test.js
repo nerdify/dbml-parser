@@ -408,6 +408,7 @@ test("Inline Ref Columns Settings", () => {
     name varchar(20) [not null]
     email varchar [not null, unique]
     address text [null]
+    user_info integer [ref: - user_infos.user_id]
   }
 
   table roles {
@@ -477,6 +478,18 @@ test("Inline Ref Columns Settings", () => {
               expect.objectContaining({
                 type: "setting",
                 value: "null",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            name: "user_info",
+            type: "integer",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "inline_relationship",
+                cardinality: "one-to-one",
+                table: "user_infos",
+                column: "user_id",
               }),
             ]),
           }),
