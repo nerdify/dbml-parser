@@ -6,24 +6,28 @@ const lexer = moo.compile({
     tableDf: ["table"],
     enumDf:  ["enum"],
     refDf: /ref[ ]*:/,
+    indexDf: /indexes/,
     noteDf: /note[ ]*:/,
+    nameDf: /name[ ]*:/,
+    typeDf: /type[ ]*:/,
     defaultDf: /default[ ]*:/,
     number:  /0|[1-9][0-9]*/,
 
-    lBraket: ["{"],
-    rBraket: ["}"],
+    lBraket: /\{/,
+    rBraket: /\}/,
 
-    lKey: ["["],
-    rKey: ["]"],
+    lKey: /\[/,
+    rKey: /\]/,
 
     lP: /\(/,
     rP: /\)/,
 
     comma: [","],
 
-    column_setting: ["not null", "increment", "unique"],
+    column_setting: ["not null", "increment"],
+    unique: /unique/,
     primary_key: ["primary key", "pk"],
-    null_value: ["null"],
+    null_value: /null/,
     boolean: ["true", "false"],
 
     as: ["as"],
@@ -94,7 +98,7 @@ enum_def -> %name %NL {% (match) => {
             } %}
 close_enum -> %rBraket %NL
 
-table -> open_table column:+ close_table {% (match) => { 
+table -> open_table column:+ table_index:? close_table {% (match) => { 
             const result = {
               type: 'table',
               name: match[0][1].value,
@@ -104,12 +108,117 @@ table -> open_table column:+ close_table {% (match) => {
             if (match[0][2]) {
               result.alias = match[0][2].value;
             }
+
+            if (match[2]) {
+              result.indexes = match[2];
+            }
+
             return result;
           }%}
 
 open_table -> %tableDf %name table_alias:? %lBraket %NL
 table_alias -> %as %name {% (match) => { return match[1] }%}
 close_table -> %rBraket %NL
+
+
+table_index -> %indexDf %lBraket %NL index_row:* %rBraket %NL {% (match) => {
+                return match[3];
+              } %}
+
+index_row -> fields %NL {%
+                (match) => { 
+                  const response = {
+                  type: "index",
+                  fields: match[0],
+                };
+
+                return response; 
+                }%}
+            | fields %lKey field_settings %rKey %NL {%
+              (match) => { 
+                  const response = {
+                  type: "index",
+                  fields: match[0],
+                  settings: match[2],
+              };
+
+              return response; 
+              }
+            %}               
+
+fields -> field_name {% (match) => {
+                return [{
+                  type: "field",
+                  ...match[0]
+                }]
+              } %}
+         | %lP field_names %rP {% (match) => {
+           return match[1].map((item) => {
+            return {
+              type: "field",
+              ...item,
+            }
+           });
+         } %}
+
+field_names -> field_name {% (match) => {
+              return [match[0]]
+            } %}
+            | field_names %comma field_name {%
+              (match) => {
+                return flatten([match[0], match[2]]);
+              }
+            %}
+
+field_name -> %name {% (match) => { 
+                return {
+                  field: match[0].value
+                } 
+              } %}
+            | %t_quote {% (match) => {
+              return {
+                field: match[0].value.replace(/`/g, ''),
+                isExpression: true
+              }
+            }%}
+
+field_settings -> field_setting {% (match) => {
+                  return [match[0]]
+                } %}
+              | field_settings %comma field_setting {% (match) => {
+                return flatten([match[0], match[2]])
+              } %}   
+
+field_setting -> %primary_key {% (match) => {
+                  return {
+                    type: 'field_setting',
+                    value: 'primary'
+                  }
+              } %}
+              | %unique {% (match) => {
+                  return {
+                    type: 'field_setting',
+                    value: 'unique'
+                  }
+              } %}
+              | %noteDf quote {% (match) => {
+                  return {
+                    type: 'note',
+                    value: match[1]
+                  }
+                } %}
+              | %nameDf quote {% (match) => {
+                  return {
+                    type: 'index_name',
+                    value: match[1]
+                  }
+              } %}   
+              | %typeDf %name {% (match) => {
+                  return {
+                    type: 'index_type',
+                    value: match[1].value
+                  }
+              } %}
 
 column -> column_name column_type column_setting_def:? %NL {% (match) => {
           let result = {
@@ -140,6 +249,7 @@ column_settings -> (column_setting|null) {% id %} |
 column_setting -> %column_setting {% (match) => { return {type: 'setting', value: match[0].value} }%}
                   | %primary_key {% (match) => { return {type: 'setting', value: 'primary'} }%}
                   | %null_value {% (match) => { return {type: 'setting', value: 'null' } }%}
+                  | %unique {% (match) => { return {type: 'setting', value: 'unique' } }%}
                   | note {% (match) => { return {type: 'note', value: match[0]} } %}
                   | default {% (match) => { return {type: 'default', value: match[0]} } %}
                   | default_expression {% (match) => { return {type: 'default', expression: true, value: match[0]} } %}
@@ -197,7 +307,7 @@ ref -> %refDf column_ref %LT column_ref %NL {%
                       foreign: match[3],
                     }
                   }
-              %}      
+              %}  
 
 column_ref -> %name %DOT %name {% (match) => {
               return {

@@ -12,9 +12,9 @@ const parse = (text) => {
     const parsedtext = removeComments(text);
     const response = parser.feed(parsedtext);
 
+    console.log(response.results.length);
     return response.results[0];
   } catch (e) {
-    //console.log(e);
     return null;
   }
 };

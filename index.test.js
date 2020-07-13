@@ -526,3 +526,249 @@ test("Inline Ref Columns Settings", () => {
     ])
   );
 });
+
+test("Table Index", () => {
+  const sqltext = `
+  table products {
+    id int [pk]
+    name varchar
+    merchant_id int [not null]
+    price int
+    status products_status
+    created_at datetime [default: \`now()\`]
+    update_at datetime [default: \`now()\`]
+    arrive_date date
+
+    indexes {
+      id
+      \`id*2\`
+      (id, country)
+      (\`id*2\`)
+      (\`id*3\`,\`getdate()\`)
+      (\`id*3\`,id)
+      id [pk]
+      (country, booking_date) [unique]
+      created_at [note: 'Date']
+      updated_at [note: "Update Date"]
+      (merchant_id, status) [unique, note: 'inventory status', name: "inventory status"]
+      arrive_date [type: hash, note: "mail arrive"]
+
+    }
+  }
+  `;
+
+  const result = parse(sqltext);
+
+  //Indexes without Settings
+  expect(result).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: "table",
+        name: "products",
+        indexes: expect.arrayContaining([
+          expect.objectContaining({
+            fields: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field",
+                field: "id",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            fields: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field",
+                field: "id*2",
+                isExpression: true,
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            fields: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field",
+                field: "id",
+              }),
+              expect.objectContaining({
+                type: "field",
+                field: "country",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            fields: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field",
+                field: "id*2",
+                isExpression: true,
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            fields: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field",
+                field: "id*3",
+                isExpression: true,
+              }),
+              expect.objectContaining({
+                type: "field",
+                field: "getdate()",
+                isExpression: true,
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            fields: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field",
+                field: "id*3",
+                isExpression: true,
+              }),
+              expect.objectContaining({
+                type: "field",
+                field: "id",
+              }),
+            ]),
+          }),
+        ]),
+      }),
+    ])
+  );
+
+  //Index Settings
+  expect(result).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: "table",
+        name: "products",
+        indexes: expect.arrayContaining([
+          expect.objectContaining({
+            fields: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field",
+                field: "id",
+              }),
+            ]),
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field_setting",
+                value: "primary",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            fields: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field",
+                field: "country",
+              }),
+              expect.objectContaining({
+                type: "field",
+                field: "booking_date",
+              }),
+            ]),
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field_setting",
+                value: "unique",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            fields: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field",
+                field: "created_at",
+              }),
+            ]),
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "note",
+                value: "Date",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            fields: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field",
+                field: "updated_at",
+              }),
+            ]),
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "note",
+                value: "Update Date",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            fields: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field",
+                field: "updated_at",
+              }),
+            ]),
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "note",
+                value: "Update Date",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            fields: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field",
+                field: "status",
+              }),
+              expect.objectContaining({
+                type: "field",
+                field: "merchant_id",
+              }),
+              expect.objectContaining({
+                type: "field",
+                field: "status",
+              }),
+            ]),
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field_setting",
+                value: "unique",
+              }),
+              expect.objectContaining({
+                type: "note",
+                value: "inventory status",
+              }),
+              expect.objectContaining({
+                type: "index_name",
+                value: "inventory status",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            fields: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field",
+                field: "arrive_date",
+              }),
+            ]),
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "index_type",
+                value: "hash",
+              }),
+            ]),
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "note",
+                value: "mail arrive",
+              }),
+            ]),
+          }),
+        ]),
+      }),
+    ])
+  );
+});
