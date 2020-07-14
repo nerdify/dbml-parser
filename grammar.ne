@@ -3,10 +3,10 @@
 const moo = require("moo");
 
 const lexer = moo.compile({
-    tableDf: ["table"],
-    enumDf:  ["enum"],
+    tableDf: /table[ ]*/,
+    enumDf:  /enum[ ]*/,
     refDf: /ref[ ]*:/,
-    indexDf: /indexes/,
+    indexDf: /indexes[ ]*/,
     noteDf: /note[ ]*:/,
     nameDf: /name[ ]*:/,
     typeDf: /type[ ]*:/,
@@ -34,7 +34,7 @@ const lexer = moo.compile({
     d_quote: /\"[^"]*\"/,
     s_quote: /\'[^']*\'/,
     t_quote: /\`[^`]*\`/,
-    name: /[\w_\d]+/,
+    name: /[A-Za-z_0-9]+/,
     
 
     NL: { match:/[\n]+/, lineBreaks: true },
@@ -317,7 +317,7 @@ column_ref -> %name %DOT %name {% (match) => {
             }%}
 
 default -> %defaultDf %s_quote {% (match) => { return match[1].value.replace(/'/g, '') } %}
-          | %defaultDf d_number {% (match) => { return match[1][0] } %}
+          | %defaultDf decimal {% (match) => { return match[1] } %}
           | %defaultDf %boolean {% (match) => { return match[1].value === 'true' } %}
 
 default_null -> %defaultDf %null_value {% (match) => { return match[1] } %}
@@ -326,8 +326,8 @@ default_expression -> %defaultDf %t_quote {% (match) => { return match[1].value.
 
 #TODO: Check exist a function with more two parameters
 column_type -> %name {% (match) => {return match[0].value} %} 
-              | %name %lP d_number %rP {% (match) => { return `${match[0]}(${match[2]})` } %}
-              | %name %lP d_number %comma  d_number %rP {% (match) => { return `${match[0]}(${match[2]},${match[4]})` } %}
+              | %name %lP int %rP {% (match) => { return `${match[0]}(${match[2]})` } %}
+              | %name %lP int %comma  int %rP {% (match) => { return `${match[0]}(${match[2]},${match[4]})` } %}
 
 quote -> %d_quote {% (match) => {
                 return match[0].value.replace(/\"/g, '')
@@ -335,5 +335,3 @@ quote -> %d_quote {% (match) => {
          | %s_quote {% (match) => {
                 return match[0].value.replace(/'/g, '')
               } %}
-
-d_number -> (int|decimal) {% id %}

@@ -315,7 +315,8 @@ test("Default Columns Settings", () => {
     gender varchar(1) [default: 'm']
     created_at timestamp [default: \`now()\`]
     rating integer [default: 10]
-    }
+    average double [default: 1.5]
+  }
   `;
 
   const result = parse(sqltext);
@@ -392,6 +393,16 @@ test("Default Columns Settings", () => {
               expect.objectContaining({
                 type: "default",
                 value: 10,
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            name: "average",
+            type: "double",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "default",
+                value: 1.5,
               }),
             ]),
           }),
@@ -539,7 +550,7 @@ test("Table Index", () => {
     update_at datetime [default: \`now()\`]
     arrive_date date
 
-    indexes {
+    indexes {  
       id
       \`id*2\`
       (id, country)
@@ -552,7 +563,7 @@ test("Table Index", () => {
       updated_at [note: "Update Date"]
       (merchant_id, status) [unique, note: 'inventory status', name: "inventory status"]
       arrive_date [type: hash, note: "mail arrive"]
-
+      
     }
   }
   `;

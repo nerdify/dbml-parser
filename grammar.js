@@ -6,10 +6,10 @@ function id(x) { return x[0]; }
 const moo = require("moo");
 
 const lexer = moo.compile({
-    tableDf: ["table"],
-    enumDf:  ["enum"],
+    tableDf: /table[ ]*/,
+    enumDf:  /enum[ ]*/,
     refDf: /ref[ ]*:/,
-    indexDf: /indexes/,
+    indexDf: /indexes[ ]*/,
     noteDf: /note[ ]*:/,
     nameDf: /name[ ]*:/,
     typeDf: /type[ ]*:/,
@@ -37,7 +37,7 @@ const lexer = moo.compile({
     d_quote: /\"[^"]*\"/,
     s_quote: /\'[^']*\'/,
     t_quote: /\`[^`]*\`/,
-    name: /[\w_\d]+/,
+    name: /[A-Za-z_0-9]+/,
     
 
     NL: { match:/[\n]+/, lineBreaks: true },
@@ -408,13 +408,13 @@ var grammar = {
           }
         }},
     {"name": "default", "symbols": [(lexer.has("defaultDf") ? {type: "defaultDf"} : defaultDf), (lexer.has("s_quote") ? {type: "s_quote"} : s_quote)], "postprocess": (match) => { return match[1].value.replace(/'/g, '') }},
-    {"name": "default", "symbols": [(lexer.has("defaultDf") ? {type: "defaultDf"} : defaultDf), "d_number"], "postprocess": (match) => { return match[1][0] }},
+    {"name": "default", "symbols": [(lexer.has("defaultDf") ? {type: "defaultDf"} : defaultDf), "decimal"], "postprocess": (match) => { return match[1] }},
     {"name": "default", "symbols": [(lexer.has("defaultDf") ? {type: "defaultDf"} : defaultDf), (lexer.has("boolean") ? {type: "boolean"} : boolean)], "postprocess": (match) => { return match[1].value === 'true' }},
     {"name": "default_null", "symbols": [(lexer.has("defaultDf") ? {type: "defaultDf"} : defaultDf), (lexer.has("null_value") ? {type: "null_value"} : null_value)], "postprocess": (match) => { return match[1] }},
     {"name": "default_expression", "symbols": [(lexer.has("defaultDf") ? {type: "defaultDf"} : defaultDf), (lexer.has("t_quote") ? {type: "t_quote"} : t_quote)], "postprocess": (match) => { return match[1].value.replace(/`/g, '') }},
     {"name": "column_type", "symbols": [(lexer.has("name") ? {type: "name"} : name)], "postprocess": (match) => {return match[0].value}},
-    {"name": "column_type", "symbols": [(lexer.has("name") ? {type: "name"} : name), (lexer.has("lP") ? {type: "lP"} : lP), "d_number", (lexer.has("rP") ? {type: "rP"} : rP)], "postprocess": (match) => { return `${match[0]}(${match[2]})` }},
-    {"name": "column_type", "symbols": [(lexer.has("name") ? {type: "name"} : name), (lexer.has("lP") ? {type: "lP"} : lP), "d_number", (lexer.has("comma") ? {type: "comma"} : comma), "d_number", (lexer.has("rP") ? {type: "rP"} : rP)], "postprocess": (match) => { return `${match[0]}(${match[2]},${match[4]})` }},
+    {"name": "column_type", "symbols": [(lexer.has("name") ? {type: "name"} : name), (lexer.has("lP") ? {type: "lP"} : lP), "int", (lexer.has("rP") ? {type: "rP"} : rP)], "postprocess": (match) => { return `${match[0]}(${match[2]})` }},
+    {"name": "column_type", "symbols": [(lexer.has("name") ? {type: "name"} : name), (lexer.has("lP") ? {type: "lP"} : lP), "int", (lexer.has("comma") ? {type: "comma"} : comma), "int", (lexer.has("rP") ? {type: "rP"} : rP)], "postprocess": (match) => { return `${match[0]}(${match[2]},${match[4]})` }},
     {"name": "quote", "symbols": [(lexer.has("d_quote") ? {type: "d_quote"} : d_quote)], "postprocess":  (match) => {
           return match[0].value.replace(/\"/g, '')
         } },
