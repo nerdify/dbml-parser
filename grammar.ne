@@ -31,9 +31,10 @@ const lexer = moo.compile({
     boolean: ["true", "false"],
 
     as: ["as"],
+    ml_quote: { match: /'''[^']*'''/, lineBreaks: true },
     d_quote: /\"[^"]*\"/,
-    s_quote: /\'[^']*\'/,
-    t_quote: /\`[^`]*\`/,
+    s_quote: /'[^']*'/,
+    t_quote: { match:/`[^`]*`/, lineBreaks: true },
     name: /[A-Za-z_0-9]+/,
     
 
@@ -98,11 +99,17 @@ enum_def -> %name %NL {% (match) => {
             } %}
 close_enum -> %rBraket %NL
 
-table -> open_table column:+ table_index:? close_table {% (match) => { 
+table -> open_table (column|table_note):+ table_index:? close_table {% (match) => { 
+
             const result = {
               type: 'table',
               name: match[0][1].value,
-              columns: match[1]
+              columns: flatten(match[1]).filter((item) => {
+                return item.type === 'column'
+              }),
+              notes: flatten(match[1]).filter((item) => {
+                return item.type === 'note'
+              }),
             };
 
             if (match[0][2]) {
@@ -201,13 +208,8 @@ field_setting -> %primary_key {% (match) => {
                     value: 'unique'
                   }
               } %}
-              | %noteDf quote {% (match) => {
-                  return {
-                    type: 'note',
-                    value: match[1]
-                  }
-                } %}
-              | %nameDf quote {% (match) => {
+              | note {% (match) => { return match[0] } %}
+              | %nameDf inline_quote {% (match) => {
                   return {
                     type: 'index_name',
                     value: match[1]
@@ -222,8 +224,9 @@ field_setting -> %primary_key {% (match) => {
 
 column -> column_name column_type column_setting_def:? %NL {% (match) => {
           let result = {
+            type: 'column',
             name: match[0],
-            type: match[1],
+            variable_type: match[1],
           }
 
           if (match[2]) {
@@ -236,7 +239,7 @@ column -> column_name column_type column_setting_def:? %NL {% (match) => {
           } %}          
 
 column_name -> %name {% (match) => match[0].value %} 
-               | quote {% id %}
+               | inline_quote {% id %}
 
 column_setting_def -> %lKey column_settings %rKey {% 
                 (match) => { 
@@ -250,13 +253,11 @@ column_setting -> %column_setting {% (match) => { return {type: 'setting', value
                   | %primary_key {% (match) => { return {type: 'setting', value: 'primary'} }%}
                   | %null_value {% (match) => { return {type: 'setting', value: 'null' } }%}
                   | %unique {% (match) => { return {type: 'setting', value: 'unique' } }%}
-                  | note {% (match) => { return {type: 'note', value: match[0]} } %}
+                  | note {% (match) => { return match[0] } %}
                   | default {% (match) => { return {type: 'default', value: match[0]} } %}
                   | default_expression {% (match) => { return {type: 'default', expression: true, value: match[0]} } %}
                   | default_null {% (match) => { return {type: 'default', value: null} } %}
                   | inline_rel {% (match) => { return {...match[0]} } %}
-
-note -> %noteDf quote {% (match) => match[1] %}
 
 inline_rel -> %refDf %GT column_ref {% (match) => {
                           return {
@@ -316,7 +317,31 @@ column_ref -> %name %DOT %name {% (match) => {
               }
             }%}
 
-default -> %defaultDf %s_quote {% (match) => { return match[1].value.replace(/'/g, '') } %}
+table_note -> note %NL {% (match) => {
+              return match[0];
+            } %}
+            | %noteDf %ml_quote %NL {% (match)  => {
+              return {
+                type: 'note',
+                value: match[1].value.replace(/'''/g, '')
+              }
+            } %}
+
+note -> %noteDf inline_quote {% (match) => { 
+          return {
+            type: 'note',
+            value: match[1]
+          }
+        } %}
+       | %noteDf %t_quote {% (match) => {
+         return {
+           type: 'note',
+           expression: true,
+           value: match[1].value.replace(/`/g, '')
+         }
+       } %}
+
+default -> %defaultDf inline_quote {% (match) => { return match[1] } %}
           | %defaultDf decimal {% (match) => { return match[1] } %}
           | %defaultDf %boolean {% (match) => { return match[1].value === 'true' } %}
 
@@ -329,7 +354,7 @@ column_type -> %name {% (match) => {return match[0].value} %}
               | %name %lP int %rP {% (match) => { return `${match[0]}(${match[2]})` } %}
               | %name %lP int %comma  int %rP {% (match) => { return `${match[0]}(${match[2]},${match[4]})` } %}
 
-quote -> %d_quote {% (match) => {
+inline_quote -> %d_quote {% (match) => {
                 return match[0].value.replace(/\"/g, '')
               } %}
          | %s_quote {% (match) => {

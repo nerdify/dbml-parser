@@ -45,10 +45,16 @@ test("Table Columns Parsing", () => {
         type: "table",
         name: "users",
         columns: expect.arrayContaining([
-          expect.objectContaining({ name: "id", type: "integer" }),
-          expect.objectContaining({ name: "name", type: "text" }),
-          expect.objectContaining({ name: "created_at", type: "datetime" }),
-          expect.objectContaining({ name: "height", type: "decimal(1,2)" }),
+          expect.objectContaining({ name: "id", variable_type: "integer" }),
+          expect.objectContaining({ name: "name", variable_type: "text" }),
+          expect.objectContaining({
+            name: "created_at",
+            variable_type: "datetime",
+          }),
+          expect.objectContaining({
+            name: "height",
+            variable_type: "decimal(1,2)",
+          }),
         ]),
       }),
       expect.objectContaining({
@@ -56,9 +62,12 @@ test("Table Columns Parsing", () => {
         name: "roles",
         alias: "R",
         columns: expect.arrayContaining([
-          expect.objectContaining({ name: "id", type: "integer" }),
-          expect.objectContaining({ name: "role", type: "varchar" }),
-          expect.objectContaining({ name: "permissions", type: "JSON" }),
+          expect.objectContaining({ name: "id", variable_type: "integer" }),
+          expect.objectContaining({ name: "role", variable_type: "varchar" }),
+          expect.objectContaining({
+            name: "permissions",
+            variable_type: "JSON",
+          }),
         ]),
       }),
     ])
@@ -157,7 +166,7 @@ test("Basic Columns Settings", () => {
         columns: expect.arrayContaining([
           expect.objectContaining({
             name: "id",
-            type: "integer",
+            variable_type: "integer",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -167,7 +176,7 @@ test("Basic Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "name",
-            type: "varchar(20)",
+            variable_type: "varchar(20)",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -177,7 +186,7 @@ test("Basic Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "email",
-            type: "varchar",
+            variable_type: "varchar",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -191,7 +200,7 @@ test("Basic Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "address",
-            type: "text",
+            variable_type: "text",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -207,7 +216,7 @@ test("Basic Columns Settings", () => {
         columns: expect.arrayContaining([
           expect.objectContaining({
             name: "id",
-            type: "integer",
+            variable_type: "integer",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -223,7 +232,7 @@ test("Basic Columns Settings", () => {
         columns: expect.arrayContaining([
           expect.objectContaining({
             name: "id",
-            type: "integer",
+            variable_type: "integer",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -260,7 +269,7 @@ test("Note Columns Settings", () => {
         columns: expect.arrayContaining([
           expect.objectContaining({
             name: "id",
-            type: "integer",
+            variable_type: "integer",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -274,7 +283,7 @@ test("Note Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "name",
-            type: "varchar(20)",
+            variable_type: "varchar(20)",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -288,7 +297,7 @@ test("Note Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "email",
-            type: "varchar",
+            variable_type: "varchar",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -329,7 +338,7 @@ test("Default Columns Settings", () => {
         columns: expect.arrayContaining([
           expect.objectContaining({
             name: "id",
-            type: "integer",
+            variable_type: "integer",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -339,7 +348,7 @@ test("Default Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "username",
-            type: "varchar(255)",
+            variable_type: "varchar(255)",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -357,7 +366,7 @@ test("Default Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "full_name",
-            type: "varchar(255)",
+            variable_type: "varchar(255)",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -367,7 +376,7 @@ test("Default Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "gender",
-            type: "varchar(1)",
+            variable_type: "varchar(1)",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "default",
@@ -377,7 +386,7 @@ test("Default Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "created_at",
-            type: "timestamp",
+            variable_type: "timestamp",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "default",
@@ -388,7 +397,7 @@ test("Default Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "rating",
-            type: "integer",
+            variable_type: "integer",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "default",
@@ -398,7 +407,7 @@ test("Default Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "average",
-            type: "double",
+            variable_type: "double",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "default",
@@ -438,7 +447,7 @@ test("Inline Ref Columns Settings", () => {
         columns: expect.arrayContaining([
           expect.objectContaining({
             name: "id",
-            type: "integer",
+            variable_type: "integer",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -460,7 +469,7 @@ test("Inline Ref Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "name",
-            type: "varchar(20)",
+            variable_type: "varchar(20)",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -470,7 +479,7 @@ test("Inline Ref Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "email",
-            type: "varchar",
+            variable_type: "varchar",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -484,7 +493,7 @@ test("Inline Ref Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "address",
-            type: "text",
+            variable_type: "text",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -494,7 +503,7 @@ test("Inline Ref Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "user_info",
-            type: "integer",
+            variable_type: "integer",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "inline_relationship",
@@ -512,7 +521,7 @@ test("Inline Ref Columns Settings", () => {
         columns: expect.arrayContaining([
           expect.objectContaining({
             name: "id",
-            type: "integer",
+            variable_type: "integer",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "setting",
@@ -522,7 +531,7 @@ test("Inline Ref Columns Settings", () => {
           }),
           expect.objectContaining({
             name: "user_id",
-            type: "integer",
+            variable_type: "integer",
             settings: expect.arrayContaining([
               expect.objectContaining({
                 type: "inline_relationship",
@@ -780,6 +789,95 @@ test("Table Index", () => {
           }),
         ]),
       }),
+    ])
+  );
+});
+
+test("Table Notes Parsing", () => {
+  const sqltext = `
+  table users {
+    id integer [note: "user id"]
+    note: 'this is a note'
+  }
+
+  table infos {
+    id integer
+    note: "this is info"
+  }
+
+  table infos_users {
+    note: \`expire now()\`
+    id integer
+    note: '''pivot infos'''
+  }
+
+  table likes {
+    id integer
+    note: "store likes"
+    user_id integer
+    note: "relation user"
+  }
+
+
+  table roles as R {
+    id integer
+  }
+  `;
+
+  const result = parse(sqltext);
+
+  expect(result).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: "table",
+        name: "users",
+        notes: expect.arrayContaining([
+          expect.objectContaining({ type: "note", value: "this is a note" }),
+        ]),
+        columns: expect.arrayContaining([
+          expect.objectContaining({
+            type: "column",
+            name: "id",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "note",
+                value: "user id",
+              }),
+            ]),
+          }),
+        ]),
+      }),
+      expect.objectContaining({
+        type: "table",
+        name: "infos",
+        notes: expect.arrayContaining([
+          expect.objectContaining({ type: "note", value: "this is info" }),
+        ]),
+      }),
+      expect.objectContaining({
+        type: "table",
+        name: "infos_users",
+        notes: expect.arrayContaining([
+          expect.objectContaining({
+            type: "note",
+            expression: true,
+            value: "expire now()",
+          }),
+          expect.objectContaining({
+            type: "note",
+            value: "pivot infos",
+          }),
+        ]),
+      }),
+      expect.objectContaining({
+        type: "table",
+        name: "likes",
+        notes: expect.arrayContaining([
+          expect.objectContaining({ type: "note", value: "store likes" }),
+          expect.objectContaining({ type: "note", value: "relation user" }),
+        ]),
+      }),
+      expect.objectContaining({ type: "table", name: "roles", alias: "R" }),
     ])
   );
 });
