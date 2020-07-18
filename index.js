@@ -19,7 +19,6 @@ const parse = (text) => {
     const parsedtext = trimEmptyLines(removeComments(text));
     const response = parser.feed(parsedtext);
 
-    console.log(response.results.length);
     return response.results[0];
   } catch (e) {
     return null;

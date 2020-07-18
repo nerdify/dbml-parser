@@ -6,6 +6,7 @@ const lexer = moo.compile({
     tableDf: /table[ ]*/,
     enumDf:  /enum[ ]*/,
     refDf: /ref[ ]*:/,
+    refNm: /ref/,
     indexDf: /indexes[ ]*/,
     noteDf: /note[ ]*:/,
     nameDf: /name[ ]*:/,
@@ -73,9 +74,28 @@ const flatten = d => {
 
 @lexer lexer
 
-elements -> %NL:* (table | enum | ref):* %NL:* {% (match) => {
+elements -> %NL:* (table | enum | short_ref | long_ref):* %NL:* {% (match) => {
               return match[1].map((item) => {return item[0]});
             } %}
+
+long_ref -> %refNm (%name):? %lBraket %NL (long_ref_row):+ %rBraket %NL {% (match) => {
+              const response = {
+                type: 'relationships',
+                relationships: match[4].map(item => item[0]),
+              }
+
+              if (match[1]) {
+                response.name = match[1][0].value;
+              }
+
+              return response;
+            } %}
+
+long_ref_row -> ref %NL {% (match) => {
+                return {
+                  ...match[0]
+                }
+              } %}
 
 enum -> open_enum (enum_def):+ close_enum {% 
           (match) => {
@@ -280,35 +300,41 @@ inline_rel -> %refDf %GT column_ref {% (match) => {
                             ...match[2],
                           }
                         } %}
+
+short_ref -> %refDf ref %NL {% (match) => {
+                return {
+                  ...match[1]
+                }
+              } %}                        
                         
-ref -> %refDf column_ref %LT column_ref %NL {%
+ref -> column_ref %LT column_ref {%
                   (match) => {
                     return {
                       type: 'relationship',
-                      primary: match[1],
-                      foreign: match[3],
+                      primary: match[0],
+                      foreign: match[2],
                     }
                   }
               %} 
-        | %refDf column_ref %GT column_ref %NL {%
+        | column_ref %GT column_ref {%
                   (match) => {
                     return {
                       type: 'relationship',
-                      primary: match[3],
-                      foreign: match[1],
+                      primary: match[2],
+                      foreign: match[0],
                     }
                   }
               %}
-        | %refDf column_ref %DASH column_ref %NL {%
+        | column_ref %DASH column_ref {%
                   (match) => {
                     return {
                       type: 'relationship',
                       isOneToOne: true,
-                      primary: match[1],
-                      foreign: match[3],
+                      primary: match[0],
+                      foreign: match[2],
                     }
                   }
-              %}  
+              %}
 
 column_ref -> %name %DOT %name {% (match) => {
               return {
@@ -333,13 +359,6 @@ note -> %noteDf inline_quote {% (match) => {
             value: match[1]
           }
         } %}
-       | %noteDf %t_quote {% (match) => {
-         return {
-           type: 'note',
-           expression: true,
-           value: match[1].value.replace(/`/g, '')
-         }
-       } %}
 
 default -> %defaultDf inline_quote {% (match) => { return match[1] } %}
           | %defaultDf decimal {% (match) => { return match[1] } %}

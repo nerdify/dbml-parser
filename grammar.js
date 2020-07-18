@@ -9,6 +9,7 @@ const lexer = moo.compile({
     tableDf: /table[ ]*/,
     enumDf:  /enum[ ]*/,
     refDf: /ref[ ]*:/,
+    refNm: /ref/,
     indexDf: /indexes[ ]*/,
     noteDf: /note[ ]*:/,
     nameDf: /name[ ]*:/,
@@ -166,12 +167,37 @@ var grammar = {
     {"name": "elements$ebnf$2", "symbols": []},
     {"name": "elements$ebnf$2$subexpression$1", "symbols": ["table"]},
     {"name": "elements$ebnf$2$subexpression$1", "symbols": ["enum"]},
-    {"name": "elements$ebnf$2$subexpression$1", "symbols": ["ref"]},
+    {"name": "elements$ebnf$2$subexpression$1", "symbols": ["short_ref"]},
+    {"name": "elements$ebnf$2$subexpression$1", "symbols": ["long_ref"]},
     {"name": "elements$ebnf$2", "symbols": ["elements$ebnf$2", "elements$ebnf$2$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "elements$ebnf$3", "symbols": []},
     {"name": "elements$ebnf$3", "symbols": ["elements$ebnf$3", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "elements", "symbols": ["elements$ebnf$1", "elements$ebnf$2", "elements$ebnf$3"], "postprocess":  (match) => {
           return match[1].map((item) => {return item[0]});
+        } },
+    {"name": "long_ref$ebnf$1$subexpression$1", "symbols": [(lexer.has("name") ? {type: "name"} : name)]},
+    {"name": "long_ref$ebnf$1", "symbols": ["long_ref$ebnf$1$subexpression$1"], "postprocess": id},
+    {"name": "long_ref$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "long_ref$ebnf$2$subexpression$1", "symbols": ["long_ref_row"]},
+    {"name": "long_ref$ebnf$2", "symbols": ["long_ref$ebnf$2$subexpression$1"]},
+    {"name": "long_ref$ebnf$2$subexpression$2", "symbols": ["long_ref_row"]},
+    {"name": "long_ref$ebnf$2", "symbols": ["long_ref$ebnf$2", "long_ref$ebnf$2$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "long_ref", "symbols": [(lexer.has("refNm") ? {type: "refNm"} : refNm), "long_ref$ebnf$1", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), (lexer.has("NL") ? {type: "NL"} : NL), "long_ref$ebnf$2", (lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
+          const response = {
+            type: 'relationships',
+            relationships: match[4].map(item => item[0]),
+          }
+        
+          if (match[1]) {
+            response.name = match[1][0].value;
+          }
+        
+          return response;
+        } },
+    {"name": "long_ref_row", "symbols": ["ref", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
+          return {
+            ...match[0]
+          }
         } },
     {"name": "enum$ebnf$1$subexpression$1", "symbols": ["enum_def"]},
     {"name": "enum$ebnf$1", "symbols": ["enum$ebnf$1$subexpression$1"]},
@@ -379,31 +405,36 @@ var grammar = {
             ...match[2],
           }
         } },
-    {"name": "ref", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), "column_ref", (lexer.has("LT") ? {type: "LT"} : LT), "column_ref", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": 
+    {"name": "short_ref", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), "ref", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
+          return {
+            ...match[1]
+          }
+        } },
+    {"name": "ref", "symbols": ["column_ref", (lexer.has("LT") ? {type: "LT"} : LT), "column_ref"], "postprocess": 
         (match) => {
           return {
             type: 'relationship',
-            primary: match[1],
-            foreign: match[3],
+            primary: match[0],
+            foreign: match[2],
           }
         }
                       },
-    {"name": "ref", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), "column_ref", (lexer.has("GT") ? {type: "GT"} : GT), "column_ref", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": 
+    {"name": "ref", "symbols": ["column_ref", (lexer.has("GT") ? {type: "GT"} : GT), "column_ref"], "postprocess": 
         (match) => {
           return {
             type: 'relationship',
-            primary: match[3],
-            foreign: match[1],
+            primary: match[2],
+            foreign: match[0],
           }
         }
                       },
-    {"name": "ref", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), "column_ref", (lexer.has("DASH") ? {type: "DASH"} : DASH), "column_ref", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": 
+    {"name": "ref", "symbols": ["column_ref", (lexer.has("DASH") ? {type: "DASH"} : DASH), "column_ref"], "postprocess": 
         (match) => {
           return {
             type: 'relationship',
             isOneToOne: true,
-            primary: match[1],
-            foreign: match[3],
+            primary: match[0],
+            foreign: match[2],
           }
         }
                       },
@@ -426,13 +457,6 @@ var grammar = {
           return {
             type: 'note',
             value: match[1]
-          }
-        } },
-    {"name": "note", "symbols": [(lexer.has("noteDf") ? {type: "noteDf"} : noteDf), (lexer.has("t_quote") ? {type: "t_quote"} : t_quote)], "postprocess":  (match) => {
-          return {
-            type: 'note',
-            expression: true,
-            value: match[1].value.replace(/`/g, '')
           }
         } },
     {"name": "default", "symbols": [(lexer.has("defaultDf") ? {type: "defaultDf"} : defaultDf), "inline_quote"], "postprocess": (match) => { return match[1] }},

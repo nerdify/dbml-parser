@@ -806,7 +806,7 @@ test("Table Notes Parsing", () => {
   }
 
   table infos_users {
-    note: \`expire now()\`
+    note: "expire now()"
     id integer
     note: '''pivot infos'''
   }
@@ -860,7 +860,6 @@ test("Table Notes Parsing", () => {
         notes: expect.arrayContaining([
           expect.objectContaining({
             type: "note",
-            expression: true,
             value: "expire now()",
           }),
           expect.objectContaining({
@@ -878,6 +877,77 @@ test("Table Notes Parsing", () => {
         ]),
       }),
       expect.objectContaining({ type: "table", name: "roles", alias: "R" }),
+    ])
+  );
+});
+
+test("Long References Parsing", () => {
+  const sqltext = `
+  table users {
+    id integer
+  }
+
+  table users_infos {
+    id integer
+    user_id integer
+  }
+  
+  table roles {
+    id integer
+    user_id integer
+  }
+
+  ref infos {
+    users.id < users_infos.user_id
+  }
+
+  ref {
+    users.id < roles.user_id
+  }
+  `;
+
+  const result = parse(sqltext);
+
+  expect(result).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ type: "table", name: "users" }),
+      expect.objectContaining({
+        type: "table",
+        name: "users_infos",
+      }),
+      expect.objectContaining({
+        type: "relationships",
+        name: "infos",
+        relationships: expect.arrayContaining([
+          expect.objectContaining({
+            type: "relationship",
+            primary: expect.objectContaining({
+              table: "users",
+              column: "id",
+            }),
+            foreign: expect.objectContaining({
+              table: "users_infos",
+              column: "user_id",
+            }),
+          }),
+        ]),
+      }),
+      expect.objectContaining({
+        type: "relationships",
+        relationships: expect.arrayContaining([
+          expect.objectContaining({
+            type: "relationship",
+            primary: expect.objectContaining({
+              table: "users",
+              column: "id",
+            }),
+            foreign: expect.objectContaining({
+              table: "roles",
+              column: "user_id",
+            }),
+          }),
+        ]),
+      }),
     ])
   );
 });
