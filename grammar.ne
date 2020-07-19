@@ -2,57 +2,59 @@
 @{%
 const moo = require("moo");
 
-const lexer = moo.compile({
-    tableDf: /table[ ]*/,
-    enumDf:  /enum[ ]*/,
-    refDf: /ref[ ]*:/,
-    refNm: /ref/,
-    indexDf: /indexes[ ]*/,
-    noteDf: /note[ ]*:/,
-    nameDf: /name[ ]*:/,
-    typeDf: /type[ ]*:/,
-    defaultDf: /default[ ]*:/,
-    number:  /0|[1-9][0-9]*/,
+const lexer = moo.states({
+    main: {
+      tableDf: /table[ ]*/,
+      enumDf:  /enum[ ]*/,
+      refDf: /ref[ ]*:/,
+      refNm: /ref/,
+      indexDf: /indexes[ ]*/,
+      noteDf: /note[ ]*:/,
+      nameDf: /name[ ]*:/,
+      typeDf: /type[ ]*:/,
+      defaultDf: /default[ ]*:/,
+      number:  /0|[1-9][0-9]*/,
 
-    lBraket: /\{/,
-    rBraket: /\}/,
+      lBraket: /\{/,
+      rBraket: /\}/,
 
-    lKey: /\[/,
-    rKey: /\]/,
+      lKey: /\[/,
+      rKey: /\]/,
 
-    lP: /\(/,
-    rP: /\)/,
+      lP: /\(/,
+      rP: /\)/,
 
-    comma: [","],
+      comma: [","],
 
-    updateSettingDf: /update[ ]*:/,
-    deleteSettingDf: /delete[ ]*:/,
-    relationship_action: ['cascade', 'restrict', 'set null', 'set default', 'no action'],
+      updateSettingDf: /update[ ]*:/,
+      deleteSettingDf: /delete[ ]*:/,
+      relationship_action: ['cascade', 'restrict', 'set null', 'set default', 'no action'],
 
-    column_setting: ["not null", "increment"],
+      column_setting: ["not null", "increment"],
 
-    unique: /unique/,
-    primary_key: ["primary key", "pk"],
-    null_value: /null/,
-    boolean: ["true", "false"],
+      unique: /unique/,
+      primary_key: ["primary key", "pk"],
+      null_value: /null/,
+      boolean: ["true", "false"],
 
-    as: ["as"],
-    ml_quote: { match: /'''[^']*'''/, lineBreaks: true },
-    d_quote: /\"[^"]*\"/,
-    s_quote: /'[^']*'/,
-    t_quote: { match:/`[^`]*`/, lineBreaks: true },
-    name: /[A-Za-z_0-9]+/,
-    
+      as: ["as"],
+      ml_quote: { match: /'''[^']*'''/, lineBreaks: true },
+      d_quote: /\"[^"]*\"/,
+      s_quote: /'[^']*'/,
+      t_quote: { match:/`[^`]*`/, lineBreaks: true },
+      name: /[A-Za-z_0-9]+/,
+      
 
-    NL: { match:/[\n]+/, lineBreaks: true },
-    DOT: /\./,
-    GT: />/,
-    LT: /</,
-    DASH: /\-/,
-    TWODOT: /:/,
+      NL: { match:/[\n]+/, lineBreaks: true },
+      DOT: /\./,
+      GT: />/,
+      LT: /</,
+      DASH: /\-/,
+      TWODOT: /:/,
 
 
-    WS: /[ |\t]+/,  
+      WS: /[ |\t]+/,  
+    }
 });
 
 lexer.next = (next => () => {
