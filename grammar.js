@@ -28,7 +28,12 @@ const lexer = moo.compile({
 
     comma: [","],
 
+    updateSettingDf: /update[ ]*:/,
+    deleteSettingDf: /delete[ ]*:/,
+    relationship_action: ['cascade', 'restrict', 'set null', 'set default', 'no action'],
+
     column_setting: ["not null", "increment"],
+
     unique: /unique/,
     primary_key: ["primary key", "pk"],
     null_value: /null/,
@@ -47,6 +52,7 @@ const lexer = moo.compile({
     GT: />/,
     LT: /</,
     DASH: /\-/,
+    TWODOT: /:/,
 
 
     WS: /[ |\t]+/,  
@@ -194,9 +200,13 @@ var grammar = {
         
           return response;
         } },
-    {"name": "long_ref_row", "symbols": ["ref", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
+    {"name": "long_ref_row$ebnf$1$subexpression$1", "symbols": [(lexer.has("lKey") ? {type: "lKey"} : lKey), "relationship_settings", (lexer.has("rKey") ? {type: "rKey"} : rKey)]},
+    {"name": "long_ref_row$ebnf$1", "symbols": ["long_ref_row$ebnf$1$subexpression$1"], "postprocess": id},
+    {"name": "long_ref_row$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "long_ref_row", "symbols": ["ref", "long_ref_row$ebnf$1", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
           return {
-            ...match[0]
+            ...match[0],
+            settings: (match[1])? match[1][1]: null
           }
         } },
     {"name": "enum$ebnf$1$subexpression$1", "symbols": ["enum_def"]},
@@ -405,9 +415,31 @@ var grammar = {
             ...match[2],
           }
         } },
-    {"name": "short_ref", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), "ref", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
+    {"name": "short_ref$ebnf$1$subexpression$1", "symbols": [(lexer.has("lKey") ? {type: "lKey"} : lKey), "relationship_settings", (lexer.has("rKey") ? {type: "rKey"} : rKey)]},
+    {"name": "short_ref$ebnf$1", "symbols": ["short_ref$ebnf$1$subexpression$1"], "postprocess": id},
+    {"name": "short_ref$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "short_ref", "symbols": [(lexer.has("refDf") ? {type: "refDf"} : refDf), "ref", "short_ref$ebnf$1", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
           return {
-            ...match[1]
+            ...match[1],
+            settings: (match[2])? match[2][1]: null
+          }
+        } },
+    {"name": "relationship_settings$subexpression$1", "symbols": ["relationship_setting"]},
+    {"name": "relationship_settings$subexpression$1", "symbols": []},
+    {"name": "relationship_settings", "symbols": ["relationship_settings$subexpression$1"], "postprocess": id},
+    {"name": "relationship_settings", "symbols": ["relationship_setting", (lexer.has("comma") ? {type: "comma"} : comma), "relationship_settings"], "postprocess": (match) => { return flatten([match[0],match[2]]) }},
+    {"name": "relationship_setting", "symbols": [(lexer.has("deleteSettingDf") ? {type: "deleteSettingDf"} : deleteSettingDf), (lexer.has("relationship_action") ? {type: "relationship_action"} : relationship_action)], "postprocess":  (match) => {
+          return {
+            type: 'relationship_setting',
+            setting: 'delete',
+            value: match[1].value
+          }
+        } },
+    {"name": "relationship_setting", "symbols": [(lexer.has("updateSettingDf") ? {type: "updateSettingDf"} : updateSettingDf), (lexer.has("relationship_action") ? {type: "relationship_action"} : relationship_action)], "postprocess":  (match) => {
+          return {
+            type: 'relationship_setting',
+            setting: 'update',
+            value: match[1].value
           }
         } },
     {"name": "ref", "symbols": ["column_ref", (lexer.has("LT") ? {type: "LT"} : LT), "column_ref"], "postprocess": 

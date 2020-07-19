@@ -25,7 +25,12 @@ const lexer = moo.compile({
 
     comma: [","],
 
+    updateSettingDf: /update[ ]*:/,
+    deleteSettingDf: /delete[ ]*:/,
+    relationship_action: ['cascade', 'restrict', 'set null', 'set default', 'no action'],
+
     column_setting: ["not null", "increment"],
+
     unique: /unique/,
     primary_key: ["primary key", "pk"],
     null_value: /null/,
@@ -44,6 +49,7 @@ const lexer = moo.compile({
     GT: />/,
     LT: /</,
     DASH: /\-/,
+    TWODOT: /:/,
 
 
     WS: /[ |\t]+/,  
@@ -91,9 +97,10 @@ long_ref -> %refNm (%name):? %lBraket %NL (long_ref_row):+ %rBraket %NL {% (matc
               return response;
             } %}
 
-long_ref_row -> ref %NL {% (match) => {
+long_ref_row -> ref (%lKey relationship_settings %rKey):? %NL {% (match) => {
                 return {
-                  ...match[0]
+                  ...match[0],
+                  settings: (match[1])? match[1][1]: null
                 }
               } %}
 
@@ -301,11 +308,30 @@ inline_rel -> %refDf %GT column_ref {% (match) => {
                           }
                         } %}
 
-short_ref -> %refDf ref %NL {% (match) => {
+short_ref -> %refDf ref (%lKey relationship_settings %rKey):? %NL {% (match) => {
                 return {
-                  ...match[1]
+                  ...match[1],
+                  settings: (match[2])? match[2][1]: null
                 }
-              } %}                        
+              } %}
+
+relationship_settings -> (relationship_setting|null) {% id %}
+              | relationship_setting %comma relationship_settings {% (match) => { return flatten([match[0],match[2]]) } %}
+
+relationship_setting -> %deleteSettingDf %relationship_action {% (match) => {
+                return {
+                  type: 'relationship_setting',
+                  setting: 'delete',
+                  value: match[1].value
+                }
+              } %}
+              | %updateSettingDf %relationship_action {% (match) => {
+                return {
+                  type: 'relationship_setting',
+                  setting: 'update',
+                  value: match[1].value
+                }
+              } %}                     
                         
 ref -> column_ref %LT column_ref {%
                   (match) => {

@@ -951,3 +951,118 @@ test("Long References Parsing", () => {
     ])
   );
 });
+
+test("References Setting Parsing", () => {
+  const sqltext = `
+  table users {
+    id integer
+  }
+
+  table users_infos {
+    id integer
+    user_id integer
+  }
+  
+  table roles {
+    id integer
+    user_id integer
+  }
+
+  table stores {
+    id integer
+    user_id integer
+  }
+
+  ref infos {
+    users.id < users_infos.user_id [delete: set null, update: set default]
+  }
+
+  ref {
+    users.id < roles.user_id [delete: cascade]
+  }
+
+  ref: users.id < stores.user_id [delete: no action]
+  `;
+
+  const result = parse(sqltext);
+
+  expect(result).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ type: "table", name: "users" }),
+      expect.objectContaining({
+        type: "table",
+        name: "users_infos",
+      }),
+      expect.objectContaining({
+        type: "relationships",
+        name: "infos",
+        relationships: expect.arrayContaining([
+          expect.objectContaining({
+            type: "relationship",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "relationship_setting",
+                setting: "delete",
+                value: "set null",
+              }),
+              expect.objectContaining({
+                type: "relationship_setting",
+                setting: "update",
+                value: "set default",
+              }),
+            ]),
+            primary: expect.objectContaining({
+              table: "users",
+              column: "id",
+            }),
+            foreign: expect.objectContaining({
+              table: "users_infos",
+              column: "user_id",
+            }),
+          }),
+        ]),
+      }),
+      expect.objectContaining({
+        type: "relationships",
+        relationships: expect.arrayContaining([
+          expect.objectContaining({
+            type: "relationship",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "relationship_setting",
+                setting: "delete",
+                value: "cascade",
+              }),
+            ]),
+            primary: expect.objectContaining({
+              table: "users",
+              column: "id",
+            }),
+            foreign: expect.objectContaining({
+              table: "roles",
+              column: "user_id",
+            }),
+          }),
+        ]),
+      }),
+      expect.objectContaining({
+        type: "relationship",
+        primary: expect.objectContaining({
+          table: "users",
+          column: "id",
+        }),
+        foreign: expect.objectContaining({
+          table: "stores",
+          column: "user_id",
+        }),
+        settings: expect.arrayContaining([
+          expect.objectContaining({
+            type: "relationship_setting",
+            setting: "delete",
+            value: "no action",
+          }),
+        ]),
+      }),
+    ])
+  );
+});
