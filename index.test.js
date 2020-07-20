@@ -1066,3 +1066,52 @@ test("References Setting Parsing", () => {
     ])
   );
 });
+
+test("Enum parsing", () => {
+  const sqltext = `
+  enum states {
+    open
+    closed
+  }
+
+  enum user_states {
+    active
+    inactive
+    pending [note: 'default state']
+  }
+
+  table users {
+    id integer
+  }
+
+  table roles as R {
+    id integer
+  }
+  `;
+
+  const result = parse(sqltext);
+
+  expect(result).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: "enum",
+        name: "states",
+        values: expect.arrayContaining([
+          expect.objectContaining({ value: "open" }),
+          expect.objectContaining({ value: "closed" }),
+        ]),
+      }),
+      expect.objectContaining({
+        type: "enum",
+        name: "user_states",
+        values: expect.arrayContaining([
+          expect.objectContaining({ value: "active" }),
+          expect.objectContaining({ value: "inactive" }),
+          expect.objectContaining({ value: "pending", note: "default state" }),
+        ]),
+      }),
+      expect.objectContaining({ type: "table", name: "roles", alias: "R" }),
+      expect.objectContaining({ type: "table", name: "users" }),
+    ])
+  );
+});
