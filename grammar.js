@@ -39,6 +39,7 @@ const lexer = moo.states({
       primary_key: ["primary key", "pk"],
       null_value: /null/,
       boolean: ["true", "false"],
+      noteNm: /note/,
 
       as: ["as"],
       ml_quote: { match: /'''[^']*'''/, lineBreaks: true },
@@ -188,11 +189,13 @@ var grammar = {
     {"name": "long_ref$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
     {"name": "long_ref$ebnf$2", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
     {"name": "long_ref$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "long_ref$ebnf$3$subexpression$1", "symbols": ["long_ref_row"]},
-    {"name": "long_ref$ebnf$3", "symbols": ["long_ref$ebnf$3$subexpression$1"]},
-    {"name": "long_ref$ebnf$3$subexpression$2", "symbols": ["long_ref_row"]},
-    {"name": "long_ref$ebnf$3", "symbols": ["long_ref$ebnf$3", "long_ref$ebnf$3$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "long_ref", "symbols": [(lexer.has("refNm") ? {type: "refNm"} : refNm), "long_ref$ebnf$1", "long_ref$ebnf$2", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), (lexer.has("NL") ? {type: "NL"} : NL), "long_ref$ebnf$3", (lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
+    {"name": "long_ref$ebnf$3", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
+    {"name": "long_ref$ebnf$3", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "long_ref$ebnf$4$subexpression$1", "symbols": ["long_ref_row"]},
+    {"name": "long_ref$ebnf$4", "symbols": ["long_ref$ebnf$4$subexpression$1"]},
+    {"name": "long_ref$ebnf$4$subexpression$2", "symbols": ["long_ref_row"]},
+    {"name": "long_ref$ebnf$4", "symbols": ["long_ref$ebnf$4", "long_ref$ebnf$4$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "long_ref", "symbols": [(lexer.has("refNm") ? {type: "refNm"} : refNm), "long_ref$ebnf$1", "long_ref$ebnf$2", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), "long_ref$ebnf$3", "long_ref$ebnf$4", (lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
           const response = {
             type: 'relationships',
             relationships: match[5].map(item => item[0]),
@@ -228,7 +231,9 @@ var grammar = {
                 },
     {"name": "open_enum$ebnf$1", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
     {"name": "open_enum$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "open_enum", "symbols": [(lexer.has("enumDf") ? {type: "enumDf"} : enumDf), (lexer.has("name") ? {type: "name"} : name), "open_enum$ebnf$1", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), (lexer.has("NL") ? {type: "NL"} : NL)]},
+    {"name": "open_enum$ebnf$2", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
+    {"name": "open_enum$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "open_enum", "symbols": [(lexer.has("enumDf") ? {type: "enumDf"} : enumDf), (lexer.has("name") ? {type: "name"} : name), "open_enum$ebnf$1", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), "open_enum$ebnf$2"]},
     {"name": "enum_def$ebnf$1$subexpression$1", "symbols": [(lexer.has("lKey") ? {type: "lKey"} : lKey), "note", (lexer.has("rKey") ? {type: "rKey"} : rKey)]},
     {"name": "enum_def$ebnf$1", "symbols": ["enum_def$ebnf$1$subexpression$1"], "postprocess": id},
     {"name": "enum_def$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
@@ -242,24 +247,17 @@ var grammar = {
           return item;
         } },
     {"name": "close_enum", "symbols": [(lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)]},
-    {"name": "table$ebnf$1$subexpression$1", "symbols": ["column"]},
-    {"name": "table$ebnf$1$subexpression$1", "symbols": ["table_note"]},
-    {"name": "table$ebnf$1", "symbols": ["table$ebnf$1$subexpression$1"]},
-    {"name": "table$ebnf$1$subexpression$2", "symbols": ["column"]},
-    {"name": "table$ebnf$1$subexpression$2", "symbols": ["table_note"]},
-    {"name": "table$ebnf$1", "symbols": ["table$ebnf$1", "table$ebnf$1$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "table$ebnf$2", "symbols": ["table_index"], "postprocess": id},
+    {"name": "table$ebnf$1", "symbols": ["column"]},
+    {"name": "table$ebnf$1", "symbols": ["table$ebnf$1", "column"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "table$ebnf$2", "symbols": ["table_extra"], "postprocess": id},
     {"name": "table$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
     {"name": "table", "symbols": ["open_table", "table$ebnf$1", "table$ebnf$2", "close_table"], "postprocess":  (match) => { 
         
-          const result = {
+          let result = {
             type: 'table',
             name: match[0][1].value,
             columns: flatten(match[1]).filter((item) => {
               return item.type === 'column'
-            }),
-            notes: flatten(match[1]).filter((item) => {
-              return item.type === 'note'
             }),
           };
         
@@ -268,16 +266,47 @@ var grammar = {
           }
         
           if (match[2]) {
-            result.indexes = match[2];
+            result = {
+              ...result,
+              ...match[2]
+            }
           }
         
           return result;
         }},
+    {"name": "table_extra$ebnf$1", "symbols": ["table_note"], "postprocess": id},
+    {"name": "table_extra$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "table_extra", "symbols": ["table_index", "table_extra$ebnf$1"], "postprocess":  (match) => {
+          const response = {
+            indexes: match[0]
+          };
+        
+          if (match[1]) {
+            response.note = match[1];
+          }
+        
+          return response;
+        } },
+    {"name": "table_extra$ebnf$2", "symbols": ["table_index"], "postprocess": id},
+    {"name": "table_extra$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "table_extra", "symbols": ["table_note", "table_extra$ebnf$2"], "postprocess":  match => {
+          const response = {
+            note: match[0]
+          }
+          
+          if (match[1]) {
+            response.indexes = match[1];
+          }
+        
+          return response;
+        } },
     {"name": "open_table$ebnf$1", "symbols": ["table_alias"], "postprocess": id},
     {"name": "open_table$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
     {"name": "open_table$ebnf$2", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
     {"name": "open_table$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "open_table", "symbols": [(lexer.has("tableDf") ? {type: "tableDf"} : tableDf), (lexer.has("name") ? {type: "name"} : name), "open_table$ebnf$1", "open_table$ebnf$2", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), (lexer.has("NL") ? {type: "NL"} : NL)]},
+    {"name": "open_table$ebnf$3", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
+    {"name": "open_table$ebnf$3", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "open_table", "symbols": [(lexer.has("tableDf") ? {type: "tableDf"} : tableDf), (lexer.has("name") ? {type: "name"} : name), "open_table$ebnf$1", "open_table$ebnf$2", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), "open_table$ebnf$3"]},
     {"name": "table_alias", "symbols": [(lexer.has("as") ? {type: "as"} : as), (lexer.has("name") ? {type: "name"} : name)], "postprocess": (match) => { return match[1] }},
     {"name": "close_table", "symbols": [(lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)]},
     {"name": "table_index$ebnf$1", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
@@ -490,13 +519,26 @@ var grammar = {
           }
         }},
     {"name": "table_note", "symbols": ["note", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
-          return match[0];
+          return match[0].value;
         } },
     {"name": "table_note", "symbols": [(lexer.has("noteDf") ? {type: "noteDf"} : noteDf), (lexer.has("ml_quote") ? {type: "ml_quote"} : ml_quote), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match)  => {
-          return {
-            type: 'note',
-            value: match[1].value.replace(/'''/g, '')
+          return match[1].value.replace(/'''/g, '')
+        } },
+    {"name": "table_note$ebnf$1", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
+    {"name": "table_note$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "table_note$ebnf$2", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
+    {"name": "table_note$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "table_note$subexpression$1", "symbols": [(lexer.has("ml_quote") ? {type: "ml_quote"} : ml_quote)]},
+    {"name": "table_note$subexpression$1", "symbols": ["inline_quote"]},
+    {"name": "table_note$ebnf$3", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
+    {"name": "table_note$ebnf$3", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "table_note", "symbols": [(lexer.has("noteNm") ? {type: "noteNm"} : noteNm), "table_note$ebnf$1", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), "table_note$ebnf$2", "table_note$subexpression$1", "table_note$ebnf$3", (lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
+        
+          if (match[4][0].value) {
+            return match[4][0].value.replace(/'''/g, '')
           }
+        
+          return match[4][0];
         } },
     {"name": "note", "symbols": [(lexer.has("noteDf") ? {type: "noteDf"} : noteDf), "inline_quote"], "postprocess":  (match) => { 
           return {

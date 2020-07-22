@@ -36,6 +36,7 @@ const lexer = moo.states({
       primary_key: ["primary key", "pk"],
       null_value: /null/,
       boolean: ["true", "false"],
+      noteNm: /note/,
 
       as: ["as"],
       ml_quote: { match: /'''[^']*'''/, lineBreaks: true },
@@ -86,7 +87,7 @@ elements -> %NL:* (table | enum | short_ref | long_ref):* %NL:* {% (match) => {
               return match[1].map((item) => {return item[0]});
             } %}
 
-long_ref -> %refNm (%name):? %NL:? %lBraket %NL (long_ref_row):+ %rBraket %NL {% (match) => {
+long_ref -> %refNm (%name):? %NL:? %lBraket %NL:? (long_ref_row):+ %rBraket %NL {% (match) => {
               const response = {
                 type: 'relationships',
                 relationships: match[5].map(item => item[0]),
@@ -116,7 +117,7 @@ enum -> open_enum (enum_def):+ close_enum {%
           }
         %}
 
-open_enum -> %enumDf %name %NL:? %lBraket %NL
+open_enum -> %enumDf %name %NL:? %lBraket %NL:?
 enum_def -> %name (%lKey note %rKey):? %NL {% (match) => { 
               const item = {value: match[0].value}
 
@@ -128,16 +129,13 @@ enum_def -> %name (%lKey note %rKey):? %NL {% (match) => {
             } %}
 close_enum -> %rBraket %NL
 
-table -> open_table (column|table_note):+ table_index:? close_table {% (match) => { 
+table -> open_table column:+ table_extra:? close_table {% (match) => { 
 
-            const result = {
+            let result = {
               type: 'table',
               name: match[0][1].value,
               columns: flatten(match[1]).filter((item) => {
                 return item.type === 'column'
-              }),
-              notes: flatten(match[1]).filter((item) => {
-                return item.type === 'note'
               }),
             };
 
@@ -146,13 +144,40 @@ table -> open_table (column|table_note):+ table_index:? close_table {% (match) =
             }
 
             if (match[2]) {
-              result.indexes = match[2];
+              result = {
+                ...result,
+                ...match[2]
+              }
             }
 
             return result;
           }%}
 
-open_table -> %tableDf %name table_alias:? %NL:? %lBraket %NL
+table_extra -> table_index table_note:? {% (match) => {
+                const response = {
+                  indexes: match[0]
+                };
+
+                if (match[1]) {
+                  response.note = match[1];
+                }
+
+                return response;
+              } %}
+              | table_note table_index:? {% match => {
+                const response = {
+                  note: match[0]
+                }
+                
+                if (match[1]) {
+                  response.indexes = match[1];
+                }
+
+                return response;
+              } %}
+              
+
+open_table -> %tableDf %name table_alias:? %NL:? %lBraket %NL:?
 table_alias -> %as %name {% (match) => { return match[1] }%}
 close_table -> %rBraket %NL
 
@@ -372,14 +397,19 @@ column_ref -> %name %DOT %name {% (match) => {
             }%}
 
 table_note -> note %NL {% (match) => {
-              return match[0];
+              return match[0].value;
             } %}
             | %noteDf %ml_quote %NL {% (match)  => {
-              return {
-                type: 'note',
-                value: match[1].value.replace(/'''/g, '')
+              return match[1].value.replace(/'''/g, '')
+            } %}
+            | %noteNm %NL:? %lBraket %NL:? (%ml_quote|inline_quote) %NL:? %rBraket %NL {% (match) => {
+
+              if (match[4][0].value) {
+                return match[4][0].value.replace(/'''/g, '')
               }
-            } %} 
+
+              return match[4][0];
+            } %}
 
 note -> %noteDf inline_quote {% (match) => { 
           return {

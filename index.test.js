@@ -555,6 +555,78 @@ test("Inline Ref Columns Settings", () => {
   );
 });
 
+test("Table Notes Parsing", () => {
+  const sqltext = `
+  table users {
+    id integer [note: "user id"]
+    note: 'this is a note'
+  }
+
+  table infos {
+    id integer
+    note: "this is info"
+  }
+
+  table infos_users {
+    id integer
+    note: '''pivot infos'''
+  }
+
+  table likes {
+    id integer
+    user_id integer
+    note { 
+      "relation user"
+    }
+  }
+
+
+  table roles as R {
+    id integer
+  }
+  `;
+
+  const result = parse(sqltext);
+
+  expect(result).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: "table",
+        name: "users",
+        note: "this is a note",
+        columns: expect.arrayContaining([
+          expect.objectContaining({
+            type: "column",
+            name: "id",
+            settings: expect.arrayContaining([
+              expect.objectContaining({
+                type: "note",
+                value: "user id",
+              }),
+            ]),
+          }),
+        ]),
+      }),
+      expect.objectContaining({
+        type: "table",
+        name: "infos",
+        note: "this is info",
+      }),
+      expect.objectContaining({
+        type: "table",
+        name: "infos_users",
+        note: "pivot infos",
+      }),
+      expect.objectContaining({
+        type: "table",
+        name: "likes",
+        note: "relation user",
+      }),
+      expect.objectContaining({ type: "table", name: "roles", alias: "R" }),
+    ])
+  );
+});
+
 test("Table Index", () => {
   const sqltext = `
   table products {
@@ -582,13 +654,17 @@ test("Table Index", () => {
       arrive_date [type: hash, note: "mail arrive"]
       
     }
+
+    note {
+      '''multiline note'''}
   }
 
   table users
   {
-    id primary 
-    indexes   
-    {
+    id primary
+    note {"user note"}
+    
+    indexes  {
       id
     }
   }
@@ -602,6 +678,7 @@ test("Table Index", () => {
       expect.objectContaining({
         type: "table",
         name: "users",
+        note: "user note",
         indexes: expect.arrayContaining([
           expect.objectContaining({
             fields: expect.arrayContaining([
@@ -699,6 +776,7 @@ test("Table Index", () => {
       expect.objectContaining({
         type: "table",
         name: "products",
+        note: "multiline note",
         indexes: expect.arrayContaining([
           expect.objectContaining({
             fields: expect.arrayContaining([
@@ -826,94 +904,6 @@ test("Table Index", () => {
           }),
         ]),
       }),
-    ])
-  );
-});
-
-test("Table Notes Parsing", () => {
-  const sqltext = `
-  table users {
-    id integer [note: "user id"]
-    note: 'this is a note'
-  }
-
-  table infos {
-    id integer
-    note: "this is info"
-  }
-
-  table infos_users {
-    note: "expire now()"
-    id integer
-    note: '''pivot infos'''
-  }
-
-  table likes {
-    id integer
-    note: "store likes"
-    user_id integer
-    note: "relation user"
-  }
-
-
-  table roles as R {
-    id integer
-  }
-  `;
-
-  const result = parse(sqltext);
-
-  expect(result).toEqual(
-    expect.arrayContaining([
-      expect.objectContaining({
-        type: "table",
-        name: "users",
-        notes: expect.arrayContaining([
-          expect.objectContaining({ type: "note", value: "this is a note" }),
-        ]),
-        columns: expect.arrayContaining([
-          expect.objectContaining({
-            type: "column",
-            name: "id",
-            settings: expect.arrayContaining([
-              expect.objectContaining({
-                type: "note",
-                value: "user id",
-              }),
-            ]),
-          }),
-        ]),
-      }),
-      expect.objectContaining({
-        type: "table",
-        name: "infos",
-        notes: expect.arrayContaining([
-          expect.objectContaining({ type: "note", value: "this is info" }),
-        ]),
-      }),
-      expect.objectContaining({
-        type: "table",
-        name: "infos_users",
-        notes: expect.arrayContaining([
-          expect.objectContaining({
-            type: "note",
-            value: "expire now()",
-          }),
-          expect.objectContaining({
-            type: "note",
-            value: "pivot infos",
-          }),
-        ]),
-      }),
-      expect.objectContaining({
-        type: "table",
-        name: "likes",
-        notes: expect.arrayContaining([
-          expect.objectContaining({ type: "note", value: "store likes" }),
-          expect.objectContaining({ type: "note", value: "relation user" }),
-        ]),
-      }),
-      expect.objectContaining({ type: "table", name: "roles", alias: "R" }),
     ])
   );
 });
@@ -1119,6 +1109,10 @@ test("Enum parsing", () => {
     pending [note: 'default state']
   }
 
+  enum item_status { available
+    sold
+  }
+
   table users {
     id integer
   }
@@ -1147,6 +1141,14 @@ test("Enum parsing", () => {
           expect.objectContaining({ value: "active" }),
           expect.objectContaining({ value: "inactive" }),
           expect.objectContaining({ value: "pending", note: "default state" }),
+        ]),
+      }),
+      expect.objectContaining({
+        type: "enum",
+        name: "item_status",
+        values: expect.arrayContaining([
+          expect.objectContaining({ value: "available" }),
+          expect.objectContaining({ value: "sold" }),
         ]),
       }),
       expect.objectContaining({ type: "table", name: "roles", alias: "R" }),
