@@ -86,10 +86,10 @@ elements -> %NL:* (table | enum | short_ref | long_ref):* %NL:* {% (match) => {
               return match[1].map((item) => {return item[0]});
             } %}
 
-long_ref -> %refNm (%name):? %lBraket %NL (long_ref_row):+ %rBraket %NL {% (match) => {
+long_ref -> %refNm (%name):? %NL:? %lBraket %NL (long_ref_row):+ %rBraket %NL {% (match) => {
               const response = {
                 type: 'relationships',
-                relationships: match[4].map(item => item[0]),
+                relationships: match[5].map(item => item[0]),
               }
 
               if (match[1]) {
@@ -116,7 +116,7 @@ enum -> open_enum (enum_def):+ close_enum {%
           }
         %}
 
-open_enum -> %enumDf %name %lBraket %NL
+open_enum -> %enumDf %name %NL:? %lBraket %NL
 enum_def -> %name (%lKey note %rKey):? %NL {% (match) => { 
               const item = {value: match[0].value}
 
@@ -152,13 +152,13 @@ table -> open_table (column|table_note):+ table_index:? close_table {% (match) =
             return result;
           }%}
 
-open_table -> %tableDf %name table_alias:? %lBraket %NL
+open_table -> %tableDf %name table_alias:? %NL:? %lBraket %NL
 table_alias -> %as %name {% (match) => { return match[1] }%}
 close_table -> %rBraket %NL
 
 
-table_index -> %indexDf %lBraket %NL index_row:* %rBraket %NL {% (match) => {
-                return match[3];
+table_index -> %indexDf %NL:? %lBraket %NL index_row:* %rBraket %NL {% (match) => {
+                return match[4];
               } %}
 
 index_row -> fields %NL {%
@@ -379,7 +379,7 @@ table_note -> note %NL {% (match) => {
                 type: 'note',
                 value: match[1].value.replace(/'''/g, '')
               }
-            } %}
+            } %} 
 
 note -> %noteDf inline_quote {% (match) => { 
           return {

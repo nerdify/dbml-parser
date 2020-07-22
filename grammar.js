@@ -186,14 +186,16 @@ var grammar = {
     {"name": "long_ref$ebnf$1$subexpression$1", "symbols": [(lexer.has("name") ? {type: "name"} : name)]},
     {"name": "long_ref$ebnf$1", "symbols": ["long_ref$ebnf$1$subexpression$1"], "postprocess": id},
     {"name": "long_ref$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "long_ref$ebnf$2$subexpression$1", "symbols": ["long_ref_row"]},
-    {"name": "long_ref$ebnf$2", "symbols": ["long_ref$ebnf$2$subexpression$1"]},
-    {"name": "long_ref$ebnf$2$subexpression$2", "symbols": ["long_ref_row"]},
-    {"name": "long_ref$ebnf$2", "symbols": ["long_ref$ebnf$2", "long_ref$ebnf$2$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "long_ref", "symbols": [(lexer.has("refNm") ? {type: "refNm"} : refNm), "long_ref$ebnf$1", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), (lexer.has("NL") ? {type: "NL"} : NL), "long_ref$ebnf$2", (lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
+    {"name": "long_ref$ebnf$2", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
+    {"name": "long_ref$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "long_ref$ebnf$3$subexpression$1", "symbols": ["long_ref_row"]},
+    {"name": "long_ref$ebnf$3", "symbols": ["long_ref$ebnf$3$subexpression$1"]},
+    {"name": "long_ref$ebnf$3$subexpression$2", "symbols": ["long_ref_row"]},
+    {"name": "long_ref$ebnf$3", "symbols": ["long_ref$ebnf$3", "long_ref$ebnf$3$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "long_ref", "symbols": [(lexer.has("refNm") ? {type: "refNm"} : refNm), "long_ref$ebnf$1", "long_ref$ebnf$2", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), (lexer.has("NL") ? {type: "NL"} : NL), "long_ref$ebnf$3", (lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
           const response = {
             type: 'relationships',
-            relationships: match[4].map(item => item[0]),
+            relationships: match[5].map(item => item[0]),
           }
         
           if (match[1]) {
@@ -224,7 +226,9 @@ var grammar = {
           }
         }
                 },
-    {"name": "open_enum", "symbols": [(lexer.has("enumDf") ? {type: "enumDf"} : enumDf), (lexer.has("name") ? {type: "name"} : name), (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), (lexer.has("NL") ? {type: "NL"} : NL)]},
+    {"name": "open_enum$ebnf$1", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
+    {"name": "open_enum$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "open_enum", "symbols": [(lexer.has("enumDf") ? {type: "enumDf"} : enumDf), (lexer.has("name") ? {type: "name"} : name), "open_enum$ebnf$1", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), (lexer.has("NL") ? {type: "NL"} : NL)]},
     {"name": "enum_def$ebnf$1$subexpression$1", "symbols": [(lexer.has("lKey") ? {type: "lKey"} : lKey), "note", (lexer.has("rKey") ? {type: "rKey"} : rKey)]},
     {"name": "enum_def$ebnf$1", "symbols": ["enum_def$ebnf$1$subexpression$1"], "postprocess": id},
     {"name": "enum_def$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
@@ -271,13 +275,17 @@ var grammar = {
         }},
     {"name": "open_table$ebnf$1", "symbols": ["table_alias"], "postprocess": id},
     {"name": "open_table$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "open_table", "symbols": [(lexer.has("tableDf") ? {type: "tableDf"} : tableDf), (lexer.has("name") ? {type: "name"} : name), "open_table$ebnf$1", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), (lexer.has("NL") ? {type: "NL"} : NL)]},
+    {"name": "open_table$ebnf$2", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
+    {"name": "open_table$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "open_table", "symbols": [(lexer.has("tableDf") ? {type: "tableDf"} : tableDf), (lexer.has("name") ? {type: "name"} : name), "open_table$ebnf$1", "open_table$ebnf$2", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), (lexer.has("NL") ? {type: "NL"} : NL)]},
     {"name": "table_alias", "symbols": [(lexer.has("as") ? {type: "as"} : as), (lexer.has("name") ? {type: "name"} : name)], "postprocess": (match) => { return match[1] }},
     {"name": "close_table", "symbols": [(lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)]},
-    {"name": "table_index$ebnf$1", "symbols": []},
-    {"name": "table_index$ebnf$1", "symbols": ["table_index$ebnf$1", "index_row"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "table_index", "symbols": [(lexer.has("indexDf") ? {type: "indexDf"} : indexDf), (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), (lexer.has("NL") ? {type: "NL"} : NL), "table_index$ebnf$1", (lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
-          return match[3];
+    {"name": "table_index$ebnf$1", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
+    {"name": "table_index$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "table_index$ebnf$2", "symbols": []},
+    {"name": "table_index$ebnf$2", "symbols": ["table_index$ebnf$2", "index_row"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "table_index", "symbols": [(lexer.has("indexDf") ? {type: "indexDf"} : indexDf), "table_index$ebnf$1", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), (lexer.has("NL") ? {type: "NL"} : NL), "table_index$ebnf$2", (lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
+          return match[4];
         } },
     {"name": "index_row", "symbols": ["fields", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": 
         (match) => { 

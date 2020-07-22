@@ -2,11 +2,17 @@ import { parse } from "./index.js";
 
 test("Table Parsing", () => {
   const sqltext = `
-  table users {
+  table users 
+
+  {
     id integer
   }
 
   table roles as R {
+    id integer
+  }
+
+  table categories {
     id integer
   }
   `;
@@ -17,6 +23,7 @@ test("Table Parsing", () => {
     expect.arrayContaining([
       expect.objectContaining({ type: "table", name: "users" }),
       expect.objectContaining({ type: "table", name: "roles", alias: "R" }),
+      expect.objectContaining({ type: "table", name: "categories" }),
     ])
   );
 });
@@ -30,7 +37,8 @@ test("Table Columns Parsing", () => {
     height decimal(1, 2)
   }
 
-  table roles as R {
+  table roles as R 
+  {
     id integer
     role varchar
     permissions JSON
@@ -575,9 +583,38 @@ test("Table Index", () => {
       
     }
   }
+
+  table users
+  {
+    id primary 
+    indexes   
+    {
+      id
+    }
+  }
   `;
 
   const result = parse(sqltext);
+
+  //Spaces NL and Index
+  expect(result).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: "table",
+        name: "users",
+        indexes: expect.arrayContaining([
+          expect.objectContaining({
+            fields: expect.arrayContaining([
+              expect.objectContaining({
+                type: "field",
+                field: "id",
+              }),
+            ]),
+          }),
+        ]),
+      }),
+    ])
+  );
 
   //Indexes without Settings
   expect(result).toEqual(
@@ -973,7 +1010,8 @@ test("References Setting Parsing", () => {
     user_id integer
   }
 
-  ref infos {
+  ref infos 
+  {
     users.id < users_infos.user_id [delete: set null, update: set default]
   }
 
@@ -1069,7 +1107,8 @@ test("References Setting Parsing", () => {
 
 test("Enum parsing", () => {
   const sqltext = `
-  enum states {
+  enum states 
+  {
     open
     closed
   }
