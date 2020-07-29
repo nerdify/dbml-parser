@@ -7,6 +7,8 @@ const moo = require("moo");
 
 const lexer = moo.states({
     main: {
+      projectDf: /project/,
+
       tableDf: /table[ ]*/,
       enumDf:  /enum[ ]*/,
       refDf: /ref[ ]*:/,
@@ -14,6 +16,7 @@ const lexer = moo.states({
       indexDf: /indexes[ ]*/,
       noteDf: /note[ ]*:/,
       nameDf: /name[ ]*:/,
+      databaseType: /database_type[ ]*:/,
       typeDf: /type[ ]*:/,
       defaultDf: /default[ ]*:/,
       number:  /0|[1-9][0-9]*/,
@@ -178,11 +181,44 @@ var grammar = {
     {"name": "elements$ebnf$2$subexpression$1", "symbols": ["enum"]},
     {"name": "elements$ebnf$2$subexpression$1", "symbols": ["short_ref"]},
     {"name": "elements$ebnf$2$subexpression$1", "symbols": ["long_ref"]},
+    {"name": "elements$ebnf$2$subexpression$1", "symbols": ["project"]},
     {"name": "elements$ebnf$2", "symbols": ["elements$ebnf$2", "elements$ebnf$2$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "elements$ebnf$3", "symbols": []},
     {"name": "elements$ebnf$3", "symbols": ["elements$ebnf$3", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "elements", "symbols": ["elements$ebnf$1", "elements$ebnf$2", "elements$ebnf$3"], "postprocess":  (match) => {
-          return match[1].map((item) => {return item[0]});
+        return match[1].map((item) => {return item[0]});
+        } },
+    {"name": "project$ebnf$1", "symbols": [(lexer.has("name") ? {type: "name"} : name)], "postprocess": id},
+    {"name": "project$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "project$ebnf$2", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
+    {"name": "project$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "project$ebnf$3", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
+    {"name": "project$ebnf$3", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "project$ebnf$4", "symbols": []},
+    {"name": "project$ebnf$4$subexpression$1", "symbols": ["table"]},
+    {"name": "project$ebnf$4$subexpression$1", "symbols": ["enum"]},
+    {"name": "project$ebnf$4$subexpression$1", "symbols": ["short_ref"]},
+    {"name": "project$ebnf$4$subexpression$1", "symbols": ["long_ref"]},
+    {"name": "project$ebnf$4$subexpression$1", "symbols": ["database_type"]},
+    {"name": "project$ebnf$4$subexpression$1", "symbols": ["table_note"]},
+    {"name": "project$ebnf$4", "symbols": ["project$ebnf$4", "project$ebnf$4$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "project", "symbols": [(lexer.has("projectDf") ? {type: "projectDf"} : projectDf), "project$ebnf$1", "project$ebnf$2", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), "project$ebnf$3", "project$ebnf$4", (lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
+          const response = {
+            type: 'project',
+            elements: match[5].map((item) => {return item[0]})
+          };
+        
+          if (match[1]) {
+            response.name = match[1].value;
+          }
+        
+          return response;
+        } },
+    {"name": "database_type", "symbols": [(lexer.has("databaseType") ? {type: "databaseType"} : databaseType), "inline_quote", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
+          return {
+            type: 'database',
+            value: match[1]
+          }
         } },
     {"name": "long_ref$ebnf$1$subexpression$1", "symbols": [(lexer.has("name") ? {type: "name"} : name)]},
     {"name": "long_ref$ebnf$1", "symbols": ["long_ref$ebnf$1$subexpression$1"], "postprocess": id},
@@ -282,7 +318,7 @@ var grammar = {
           };
         
           if (match[1]) {
-            response.note = match[1];
+            response.note = match[1].value;
           }
         
           return response;
@@ -291,7 +327,7 @@ var grammar = {
     {"name": "table_extra$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
     {"name": "table_extra", "symbols": ["table_note", "table_extra$ebnf$2"], "postprocess":  match => {
           const response = {
-            note: match[0]
+            note: match[0].value
           }
           
           if (match[1]) {
@@ -519,10 +555,16 @@ var grammar = {
           }
         }},
     {"name": "table_note", "symbols": ["note", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
-          return match[0].value;
+          return {
+            type: 'note',
+            value: match[0].value
+          }
         } },
     {"name": "table_note", "symbols": [(lexer.has("noteDf") ? {type: "noteDf"} : noteDf), (lexer.has("ml_quote") ? {type: "ml_quote"} : ml_quote), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match)  => {
-          return match[1].value.replace(/'''/g, '')
+          return {
+            type: 'note',
+            value: match[1].value.replace(/'''/g, '')
+          }
         } },
     {"name": "table_note$ebnf$1", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
     {"name": "table_note$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
@@ -535,10 +577,16 @@ var grammar = {
     {"name": "table_note", "symbols": [(lexer.has("noteNm") ? {type: "noteNm"} : noteNm), "table_note$ebnf$1", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), "table_note$ebnf$2", "table_note$subexpression$1", "table_note$ebnf$3", (lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
         
           if (match[4][0].value) {
-            return match[4][0].value.replace(/'''/g, '')
+            return {
+              type: 'note',
+              value: match[4][0].value.replace(/'''/g, '')
+            }
           }
         
-          return match[4][0];
+          return {
+            type: 'note',
+            value: match[4][0]
+          }
         } },
     {"name": "note", "symbols": [(lexer.has("noteDf") ? {type: "noteDf"} : noteDf), "inline_quote"], "postprocess":  (match) => { 
           return {

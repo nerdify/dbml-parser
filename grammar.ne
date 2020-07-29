@@ -4,6 +4,8 @@ const moo = require("moo");
 
 const lexer = moo.states({
     main: {
+      projectDf: /project/,
+
       tableDf: /table[ ]*/,
       enumDf:  /enum[ ]*/,
       refDf: /ref[ ]*:/,
@@ -11,6 +13,7 @@ const lexer = moo.states({
       indexDf: /indexes[ ]*/,
       noteDf: /note[ ]*:/,
       nameDf: /name[ ]*:/,
+      databaseType: /database_type[ ]*:/,
       typeDf: /type[ ]*:/,
       defaultDf: /default[ ]*:/,
       number:  /0|[1-9][0-9]*/,
@@ -83,9 +86,30 @@ const flatten = d => {
 
 @lexer lexer
 
-elements -> %NL:* (table | enum | short_ref | long_ref):* %NL:* {% (match) => {
+elements -> %NL:* (table | enum | short_ref | long_ref | project):* %NL:* {% (match) => {
               return match[1].map((item) => {return item[0]});
+              } %}            
+
+project -> %projectDf %name:? %NL:? %lBraket %NL:? (table | enum | short_ref | long_ref | database_type | table_note):* %rBraket %NL {% (match) => {
+              const response = {
+                type: 'project',
+                elements: match[5].map((item) => {return item[0]})
+              };
+
+              if (match[1]) {
+                response.name = match[1].value;
+              }
+
+              return response;
             } %}
+
+database_type -> %databaseType inline_quote %NL {% (match) => {
+                return {
+                  type: 'database',
+                  value: match[1]
+                }
+              } %}
+
 
 long_ref -> %refNm (%name):? %NL:? %lBraket %NL:? (long_ref_row):+ %rBraket %NL {% (match) => {
               const response = {
@@ -159,14 +183,14 @@ table_extra -> table_index table_note:? {% (match) => {
                 };
 
                 if (match[1]) {
-                  response.note = match[1];
+                  response.note = match[1].value;
                 }
 
                 return response;
               } %}
               | table_note table_index:? {% match => {
                 const response = {
-                  note: match[0]
+                  note: match[0].value
                 }
                 
                 if (match[1]) {
@@ -397,18 +421,30 @@ column_ref -> %name %DOT %name {% (match) => {
             }%}
 
 table_note -> note %NL {% (match) => {
-              return match[0].value;
+              return {
+                type: 'note',
+                value: match[0].value
+              }
             } %}
             | %noteDf %ml_quote %NL {% (match)  => {
-              return match[1].value.replace(/'''/g, '')
+              return {
+                type: 'note',
+                value: match[1].value.replace(/'''/g, '')
+              }
             } %}
             | %noteNm %NL:? %lBraket %NL:? (%ml_quote|inline_quote) %NL:? %rBraket %NL {% (match) => {
 
               if (match[4][0].value) {
-                return match[4][0].value.replace(/'''/g, '')
+                return {
+                  type: 'note',
+                  value: match[4][0].value.replace(/'''/g, '')
+                }
               }
 
-              return match[4][0];
+              return {
+                type: 'note',
+                value: match[4][0]
+              }
             } %}
 
 note -> %noteDf inline_quote {% (match) => { 

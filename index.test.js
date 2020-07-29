@@ -1156,3 +1156,48 @@ test("Enum parsing", () => {
     ])
   );
 });
+
+test("Project Syntax Parsing", () => {
+  const sqltext = `
+  project main {
+    database_type: 'mysql'
+
+    note: "this is a note"
+
+    table users {
+      id integer
+    }
+  
+    table roles as R {
+      id integer
+    }
+  }
+
+  table categories {
+    id integer
+  }
+
+  table infos {
+    id integer
+  }
+  `;
+
+  const result = parse(sqltext);
+
+  expect(result).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: "project",
+        name: "main",
+        elements: expect.arrayContaining([
+          expect.objectContaining({ type: "note", value: "this is a note" }),
+          expect.objectContaining({ type: "database", value: "mysql" }),
+          expect.objectContaining({ type: "table", name: "users" }),
+          expect.objectContaining({ type: "table", name: "roles", alias: "R" }),
+        ]),
+      }),
+      expect.objectContaining({ type: "table", name: "categories" }),
+      expect.objectContaining({ type: "table", name: "infos" }),
+    ])
+  );
+});
