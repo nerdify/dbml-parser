@@ -21,6 +21,7 @@ const parse = (text) => {
 
     return response.results[0];
   } catch (e) {
+    console.log(e);
     return null;
   }
 };

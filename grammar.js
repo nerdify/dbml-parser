@@ -8,9 +8,10 @@ const moo = require("moo");
 const lexer = moo.states({
     main: {
       projectDf: /project/,
+      tableGroupDf: /tablegroup/,
 
-      tableDf: /table[ ]*/,
-      enumDf:  /enum[ ]*/,
+      tableDf: /table[ ]+/,
+      enumDf:  /enum[ ]+/,
       refDf: /ref[ ]*:/,
       refNm: /ref/,
       indexDf: /indexes[ ]*/,
@@ -182,6 +183,7 @@ var grammar = {
     {"name": "elements$ebnf$2$subexpression$1", "symbols": ["short_ref"]},
     {"name": "elements$ebnf$2$subexpression$1", "symbols": ["long_ref"]},
     {"name": "elements$ebnf$2$subexpression$1", "symbols": ["project"]},
+    {"name": "elements$ebnf$2$subexpression$1", "symbols": ["table_group"]},
     {"name": "elements$ebnf$2", "symbols": ["elements$ebnf$2", "elements$ebnf$2$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "elements$ebnf$3", "symbols": []},
     {"name": "elements$ebnf$3", "symbols": ["elements$ebnf$3", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
@@ -201,6 +203,7 @@ var grammar = {
     {"name": "project$ebnf$4$subexpression$1", "symbols": ["long_ref"]},
     {"name": "project$ebnf$4$subexpression$1", "symbols": ["database_type"]},
     {"name": "project$ebnf$4$subexpression$1", "symbols": ["table_note"]},
+    {"name": "project$ebnf$4$subexpression$1", "symbols": ["table_group"]},
     {"name": "project$ebnf$4", "symbols": ["project$ebnf$4", "project$ebnf$4$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "project", "symbols": [(lexer.has("projectDf") ? {type: "projectDf"} : projectDf), "project$ebnf$1", "project$ebnf$2", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), "project$ebnf$3", "project$ebnf$4", (lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
           const response = {
@@ -214,6 +217,20 @@ var grammar = {
         
           return response;
         } },
+    {"name": "table_group$ebnf$1", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
+    {"name": "table_group$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "table_group$ebnf$2", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": id},
+    {"name": "table_group$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "table_group$ebnf$3", "symbols": []},
+    {"name": "table_group$ebnf$3", "symbols": ["table_group$ebnf$3", "table_group_row"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "table_group", "symbols": [(lexer.has("tableGroupDf") ? {type: "tableGroupDf"} : tableGroupDf), (lexer.has("name") ? {type: "name"} : name), "table_group$ebnf$1", (lexer.has("lBraket") ? {type: "lBraket"} : lBraket), "table_group$ebnf$2", "table_group$ebnf$3", (lexer.has("rBraket") ? {type: "rBraket"} : rBraket), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
+          return {
+            type: 'table_group',
+            name: match[1].value,
+            tables: match[5]
+          }
+        }},
+    {"name": "table_group_row", "symbols": [(lexer.has("name") ? {type: "name"} : name), (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": (match) => { return match[0].value}},
     {"name": "database_type", "symbols": [(lexer.has("databaseType") ? {type: "databaseType"} : databaseType), "inline_quote", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess":  (match) => {
           return {
             type: 'database',

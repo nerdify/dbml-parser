@@ -1201,3 +1201,40 @@ test("Project Syntax Parsing", () => {
     ])
   );
 });
+
+test("Table Group Parsing", () => {
+  const sqltext = `
+  table users 
+  {
+    id integer
+  }
+
+  table roles as R {
+    id integer
+  }
+
+  table categories {
+    id integer
+  }
+
+  tablegroup main {
+    users
+    roles
+  }
+  `;
+
+  const result = parse(sqltext);
+
+  expect(result).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: "table_group",
+        name: "main",
+        tables: expect.arrayContaining(["users", "roles"]),
+      }),
+      expect.objectContaining({ type: "table", name: "users" }),
+      expect.objectContaining({ type: "table", name: "roles", alias: "R" }),
+      expect.objectContaining({ type: "table", name: "categories" }),
+    ])
+  );
+});

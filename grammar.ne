@@ -5,9 +5,10 @@ const moo = require("moo");
 const lexer = moo.states({
     main: {
       projectDf: /project/,
+      tableGroupDf: /tablegroup/,
 
-      tableDf: /table[ ]*/,
-      enumDf:  /enum[ ]*/,
+      tableDf: /table[ ]+/,
+      enumDf:  /enum[ ]+/,
       refDf: /ref[ ]*:/,
       refNm: /ref/,
       indexDf: /indexes[ ]*/,
@@ -86,11 +87,11 @@ const flatten = d => {
 
 @lexer lexer
 
-elements -> %NL:* (table | enum | short_ref | long_ref | project):* %NL:* {% (match) => {
+elements -> %NL:* (table | enum | short_ref | long_ref | project | table_group):* %NL:* {% (match) => {
               return match[1].map((item) => {return item[0]});
               } %}            
 
-project -> %projectDf %name:? %NL:? %lBraket %NL:? (table | enum | short_ref | long_ref | database_type | table_note):* %rBraket %NL {% (match) => {
+project -> %projectDf %name:? %NL:? %lBraket %NL:? (table | enum | short_ref | long_ref | database_type | table_note | table_group):* %rBraket %NL {% (match) => {
               const response = {
                 type: 'project',
                 elements: match[5].map((item) => {return item[0]})
@@ -102,6 +103,16 @@ project -> %projectDf %name:? %NL:? %lBraket %NL:? (table | enum | short_ref | l
 
               return response;
             } %}
+
+table_group -> %tableGroupDf %name %NL:? %lBraket %NL:? table_group_row:* %rBraket %NL {% (match) => {
+              return {
+                type: 'table_group',
+                name: match[1].value,
+                tables: match[5]
+              }
+            }%}
+
+table_group_row -> %name %NL {% (match) => { return match[0].value} %}
 
 database_type -> %databaseType inline_quote %NL {% (match) => {
                 return {
